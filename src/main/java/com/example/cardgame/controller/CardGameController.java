@@ -1,24 +1,25 @@
 package com.example.cardgame.controller;
 
-import com.example.cardgame.model.*;
-import com.example.cardgame.view.CardGameView;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import com.example.cardgame.model.Boss;
+import com.example.cardgame.model.Card;
+import com.example.cardgame.model.Player;
+
 public class CardGameController {
-    private CardGameView view;
+
     private Random random;
 
     public CardGameController() {
-        view = new CardGameView();
+  
         random = new Random();
     }
 
     public void startGame() {
-        view.showWelcomeMessage();
+        System.out.println("欢迎来到卡牌游戏！");
 
         // 初始化卡牌库
         List<Card> bossDeck = new ArrayList<>();
