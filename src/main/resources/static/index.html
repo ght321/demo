@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>卡牌对战小游戏</title>
+    <link rel="stylesheet" href="/style.css"> <!-- 相对路径 -->
+    <style>
+        /* 美化页面布局 */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #4a90e2;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        li {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        li:hover {
+            transform: scale(1.05);
+        }
+
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* 新增卡牌堆和弃牌堆样式 */
+        .deck, .discard-pile {
+            margin-top: 20px;
+            display: inline-block;
+            width: 150px;
+            height: 200px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .deck::before, .discard-pile::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ffcc00, #ffd700);
+            opacity: 0.8;
+            z-index: -1;
+        }
+
+        .deck-text, .discard-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .discard-pile {
+            margin-left: 20px;
+        }
+
+        /* 修改 boss 区域样式 */
+        .boss-area {
+            margin-top: 20px;
+            display: none; /* 隐藏boss卡池 */
+        }
+
+        /* 新增当前boss容器样式 */
+        .current-boss-container {
+            margin: 20px auto;
+            text-align: center;
+            max-width: 500px;
+        }
+
+        /* 修改当前 Boss 显示区域 */
+        .current-boss {
+            display: inline-block;
+            vertical-align: middle;
+            margin: 0 10px;
+        }
+
+        .current-boss-card {
+            width: 150px;
+            height: 200px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            line-height: 200px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .boss-card.hidden {
+            visibility: hidden;
+        }
+
+        /* 新增玩家手牌区域样式 */
+        .player-hand {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .hand-card {
+            width: 100px;
+            height: 150px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            line-height: 150px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>欢迎来到卡牌对战小游戏！</h1>
+
+    <!-- 隐藏原来的boss区域 -->
+    <div class="boss-area">
+        <div class="boss-placeholder">?</div> <!-- 占位符 -->
+    </div>
+
+    <!-- 新增挑战按钮 -->
+    <button id="challenge-btn">挑战 Boss</button>
+
+    <!-- 当前 Boss 显示区域 -->
+    <div class="current-boss-container">
+        <div class="current-boss">
+            <div class="current-boss-card hidden"></div> <!-- 确保初始状态为隐藏 -->
+        </div>
+    </div>
+
+    <!-- 新增：Boss 生命值和攻击力显示区域 -->
+    <div id="boss-stats" style="margin-top: 10px; font-size: 18px;">
+        生命: <span id="boss-health">0</span><br>
+        攻击: <span id="boss-attack">0</span>
+    </div>
+
+    <!-- 已击败 Boss 数量显示 -->
+    <div id="defeated-boss-count" style="margin-top: 10px; font-size: 18px;">已击败 Boss 数量: 0</div>
+
+    <!-- 玩家手牌区域 -->
+    <div class="player-hand">
+        <div id="hand-cards"></div>
+    </div>
+
+    <!-- 新增手牌数显示栏 -->
+    <div id="hand-count-display" style="margin-top: 10px; font-size: 18px;">手牌数: 0</div>
+
+    <!-- 新增出牌按钮 -->
+    <button id="play-btn">出牌</button> <!-- 添加出牌按钮 -->
+
+    <!-- 抽卡堆剩余卡牌数显示栏 -->
+    <div id="deck-count-display" style="margin-top: 10px; font-size: 18px;">抽卡堆剩余卡牌数: 0</div>
+
+    <!-- 抽卡区域 -->
+    <div class="deck">
+        <div class="deck-text">卡牌堆 (?)</div>
+    </div>
+
+    <!-- 弃牌堆区域 -->
+    <div class="discard-pile">
+        <div class="discard-text">弃牌堆 (空)</div>
+    </div>
+
+    <div id="game-area">
+        <button id="draw-btn">抽卡</button> <!-- 抽卡按钮 -->
+        <button id="discard-btn">丢弃</button> <!-- 新增：丢弃按钮 -->
+        <div id="game-output"></div>
+    </div>
+
+    <script src="/game.js"></script> <!-- 加载 JavaScript 文件 -->
+</body>
+</html>

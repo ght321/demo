@@ -1,0 +1,154 @@
+/* style.css */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    text-align: center;
+    padding: 20px;
+}
+
+#game-area {
+    margin-top: 30px;
+    border: 1px solid #ccc;
+    padding: 20px;
+    display: inline-block;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+.battle-result {
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.game-output p {
+    margin: 5px 0;
+}
+
+/* 修改 player-hand 样式以支持单行排列 */
+.player-hand {
+    margin-top: 20px;
+    display: flex; /* 使用 Flexbox 布局 */
+    justify-content: center; /* 横向居中 */
+    gap: 10px; /* 卡牌之间的间距 */
+    flex-wrap: nowrap; /* 不允许换行 */
+    overflow-x: auto; /* 防止溢出 */
+}
+
+/* 确保 #hand-cards 继承 .player-hand 的样式 */
+#hand-cards {
+    display: flex; /* 使用 Flexbox 布局 */
+    justify-content: center; /* 横向居中 */
+    gap: 10px; /* 卡牌之间的间距 */
+    flex-wrap: nowrap; /* 不允许换行 */
+    overflow-x: auto; /* 防止溢出 */
+}
+
+.hand-card {
+    width: 100px; /* 卡牌宽度 */
+    height: 150px; /* 卡牌高度 */
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    line-height: 150px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* 新增 boss 占位符样式 */
+.boss-placeholder {
+    width: 100px;
+    height: 150px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    line-height: 150px;
+    font-size: 48px;
+    font-weight: bold;
+    color: #aaa;
+}
+
+/* 挑战按钮样式 */
+#challenge-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #ff5722;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* 强制提升 .current-boss-card 的颜色优先级 */
+.current-boss-card {
+    width: 150px;
+    height: 200px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    line-height: 200px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333; /* 默认颜色 */
+}
+
+/* 新增：针对不同花色的颜色规则 */
+.current-boss-card.red {
+    color: red !important;
+}
+.current-boss-card.black {
+    color: black !important;
+}
+
+/* 新增：手牌选中时的特效样式 */
+.hand-card.selected {
+    border: 2px solid gold; /* 边框发亮效果 */
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.8); /* 高光效果 */
+}
+
+.discard-pile {
+    margin-top: 20px;
+    display: inline-block;
+    width: 150px;
+    height: 200px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.discard-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #333;
+    font-size: 18px;
+    font-weight: bold;
+}

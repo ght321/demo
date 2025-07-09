@@ -1,0 +1,28 @@
+# Java IDEs
+/target/
+.idea/
+*.iml
+*.log
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Maven
+log/
+!/log/.gitkeep
+
+# Eclipse
+.settings/
+.project
+.classpath
+
+# IntelliJ IDEA
+/out/
+/build/
+
+# Node.js / npm
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
