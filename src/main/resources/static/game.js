@@ -698,6 +698,13 @@ function takeBossCounterAttack(playerAttack) {
     const bossAttack = parseInt(document.getElementById('boss-attack').textContent);
     const requiredHealth = bossAttack;
 
+    // 新增：如果 Boss 攻击力为 0，直接跳过弃牌阶段
+    if (bossAttack === 0) {
+        alert("Boss 已无攻击力，自动进入下一阶段！");
+        advanceToNextPhase();
+        return;
+    }
+
     alert(`Boss 的攻击力为 ${bossAttack}，请选择手牌总攻击力不低于此值的牌进行弃牌！`);
 
     let totalHandValue = hand.reduce((sum, card) => sum + card.attack, 0);
