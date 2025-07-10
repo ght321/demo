@@ -16,14 +16,33 @@ function initializeDeck(cards) {
         // 提供默认卡牌数据
         deck = [
             { name: "1❤", attack: 2, defense: 3, type: "普通", skill: null, suit: "❤" },
-            { name: "2♦", attack: 4, defense: 6, type: "普通", skill: null, suit: "♦" }
+            { name: "2♦", attack: 4, defense: 6, type: "普通", skill: null, suit: "♦" },
+            { name: "3♣", attack: 6, defense: 9, type: "普通", skill: null, suit: "♣" },
+            { name: "4♠", attack: 8, defense: 12, type: "普通", skill: null, suit: "♠" }
         ];
     }
 
     shuffleDeck(deck); // 洗牌
 
+    // 新增：从卡组中抽取12张牌作为初始手牌
+    const initialHandSize = 12;
+    while (hand.length < initialHandSize && deck.length > 0) {
+        hand.push(deck.shift()); // 从卡组顶部抽取一张牌
+    }
+
+    if (deck.length === 0 && hand.length < initialHandSize) {
+        console.warn("卡组不足12张牌，已将剩余牌全部加入手牌！");
+    }
+
     // 更新卡牌堆显示
     updateDeckDisplay();
+
+    // 初始化手牌数显示
+    updateHandCount();
+
+    // 确保手牌排序和显示同步更新
+    sortHandCards(); // 排序手牌
+    updateHandCount(); // 再次更新手牌数显示
 }
 
 // 新增全局变量声明
@@ -31,15 +50,6 @@ let hand = []; // 手牌数组
 let discardPile = []; // 弃牌堆数组
 let currentBoss = null; // 当前 Boss
 let defeatedBossCount = 0; // 已击败 Boss 数量
-
-function updateDeckDisplay() {
-    const deckText = document.querySelector('.deck-text');
-    if (deckText) {
-        deckText.textContent = `卡牌堆 (${deck.length})`;
-    } else {
-        console.error("未找到抽卡堆文本元素！");
-    }
-}
 
 function updateHandCount() {
     const handCountDisplay = document.getElementById('hand-count-display');
@@ -59,18 +69,18 @@ function updateDeckCount() {
     }
 }
 
-// 新增：将 cardRank 定义为全局变量
-const cardRank = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-
-function getCardRank(name) {
-    console.log("解析卡牌名称:", name); // 调试日志
-    const match = name.match(/^(\d+|[^0-9]+)/); // 匹配数字或非数字部分
-    if (match && match[1]) {
-        const value = match[1];
-        return isNaN(value) ? cardRank.indexOf(value) : parseInt(value, 10);
+// 新增方法：获取卡牌数值
+function getCardRank(cardName) {
+    if (/^\d+$/.test(cardName)) { // 如果卡牌名称是纯数字
+        return parseInt(cardName, 10);
+    } else {
+        // 解析卡牌名称中的数字部分
+        const match = cardName.match(/^(\d+)/);
+        if (match && match[1]) {
+            return parseInt(match[1], 10);
+        }
     }
-    console.error("无法解析卡牌名称:", name); // 调试日志
-    return -1; // 默认返回无效值
+    return 0; // 默认返回 0
 }
 
 function sortHandCards() {
@@ -81,7 +91,7 @@ function sortHandCards() {
 
     hand.sort((a, b) => {
         // 解析卡牌名称中的数字部分
-        const rankA = getCardRank(a.name);
+        const rankA = getCardRank(a.name); // 使用新增的 getCardRank 方法
         const rankB = getCardRank(b.name);
 
         if (rankA !== rankB) {
@@ -132,32 +142,8 @@ function sortHandCards() {
 }
 
 function drawCard() {
-    if (deck.length === 0) {
-        console.error("抽卡堆已空！");
-        return;
-    }
-
-    // 检查手牌是否已满
-    if (hand.length >= 12) {
-        alert("手牌已满，无法继续抽卡！");
-        return;
-    }
-
-    // 从卡牌堆顶部抽取一张卡牌
-    const drawnCard = deck.pop();
-
-    // 将抽到的卡牌添加到手牌数组
-    hand.push(drawnCard);
-
-    // 排序手牌
-    sortHandCards();
-
-    // 更新卡牌堆剩余数量显示
-    updateDeckCount();
-    updateDeckDisplay(); // 新增：同步更新卡牌堆显示
-
-    // 清空选中状态
-    selectedCards = [];
+    alert("请使用方片技能卡进行抽卡！");
+    return;
 }
 
 function parseCardInfo(cardText) {
@@ -554,63 +540,169 @@ function playCard() {
         return;
     }
 
-    // 获取选中的卡牌数据
     const playedCards = selectedCards.map(card => {
         const name = card.textContent;
         const index = hand.findIndex(cardObj => cardObj.name === name);
         if (index > -1) {
-            return hand.splice(index, 1)[0]; // 从手牌数组中移除并返回
+            const cardObj = hand.splice(index, 1)[0];
+            discardPile.push(cardObj); // 将打出的卡牌移入弃牌堆
+            updateDiscardPileDisplay(); // 实时更新弃牌堆显示
+            return cardObj;
         }
         return null;
     }).filter(card => card !== null);
 
-    // 计算总攻击力
     const totalAttack = playedCards.reduce((sum, card) => sum + card.attack, 0);
+
+    // 激活技能阶段
+    playedCards.forEach(card => {
+        activateSkill(card); // 调用技能激活函数
+    });
 
     // 更新当前 Boss 的生命值
     const bossHealth = parseInt(document.getElementById('boss-health').textContent);
     const newBossHealth = Math.max(0, bossHealth - totalAttack);
 
-    // 将选中的牌加入弃牌堆
-    discardPile.push(...playedCards); // 立即将选中的牌加入弃牌堆
-
-    // 更新 Boss 生命值显示
     document.getElementById('boss-health').textContent = newBossHealth;
 
-    // 检查战斗结果
     if (newBossHealth <= 0) {
-        // 新增逻辑：判断是否感化或击败
         if (totalAttack === bossHealth) {
             alert("你感化了该 Boss！将其加入你的牌库。");
-            // 将 Boss 加入手牌区
             const currentBossCard = document.querySelector('.current-boss-card');
             if (currentBossCard) {
-                const bossName = currentBossCard.textContent.split('<br>')[0].trim(); // 提取Boss名称
+                const bossName = currentBossCard.textContent.split('<br>')[0].trim();
                 const matchingBoss = window.bossCards.find(card => card.name === bossName);
                 if (matchingBoss) {
-                    hand.push(matchingBoss); // 将Boss加入手牌
+                    hand.push(matchingBoss);
                 }
             }
         } else {
             alert("你击败了该 Boss！");
-            // 不需要额外处理，因为已经将选中的牌加入弃牌堆
         }
 
-        // 更新弃牌堆显示
-        updateDiscardPileDisplay();
-
-        // 如果还有 Boss 卡，则翻开下一张 Boss 卡
+        updateDiscardPileDisplay(); // 实时更新弃牌堆显示
         drawNextBoss();
     } else {
         alert("Boss 还未被击败，准备承受反击！");
-        // 承受 Boss 反击
         takeBossCounterAttack(totalAttack);
     }
 
-    // 清空选中状态
-    clearSelectedCards(); // 调用公共方法
-    sortHandCards(); // 排序手牌
-    updateHandCount(); // 更新手牌数显示
+    clearSelectedCards();
+    sortHandCards();
+    updateHandCount();
+}
+
+function takeBossCounterAttack(playerAttack) {
+    const bossAttack = parseInt(document.getElementById('boss-attack').textContent);
+    const requiredHealth = bossAttack;
+
+    alert(`Boss 的攻击力为 ${bossAttack}，请选择手牌总攻击力不低于此值的牌进行弃牌！`);
+
+    let totalHandValue = hand.reduce((sum, card) => sum + card.attack, 0);
+
+    if (totalHandValue < requiredHealth) {
+        console.log("手牌总攻击力不足，无法抵挡 Boss 攻击！");
+        alert(`你的手牌总攻击力(${totalHandValue})不足以抵挡 Boss 的攻击力(${requiredHealth})`);
+        gameOver();
+        return;
+    }
+
+    let selectedCardsForDiscard = [];
+
+    const handContainer = document.getElementById('hand-cards');
+    const discardBtn = document.getElementById('discard-btn');
+
+    if (!handContainer || !discardBtn) {
+        console.error("未找到手牌容器或弃牌按钮！");
+        return;
+    }
+
+    function handleCardClick(event) {
+        const cardElement = event.target.closest('.hand-card');
+        if (!cardElement) return;
+
+        if (selectedCardsForDiscard.includes(cardElement)) {
+            selectedCardsForDiscard = selectedCardsForDiscard.filter(c => c !== cardElement);
+            cardElement.classList.remove('selected');
+        } else {
+            selectedCardsForDiscard.push(cardElement);
+            cardElement.classList.add('selected');
+        }
+
+        totalHandValue = selectedCardsForDiscard.reduce((sum, cardElement) => {
+            const cardName = cardElement.textContent;
+            const card = hand.find(cardObj => cardObj.name === cardName);
+            return sum + (card ? card.attack : 0);
+        }, 0);
+
+        console.log(`当前选中的总攻击力: ${totalHandValue}`);
+    }
+
+    handContainer.addEventListener('click', handleCardClick);
+
+    function handleDiscardClick() {
+        if (totalHandValue >= requiredHealth) {
+            alert("成功承受反击！");
+
+            selectedCardsForDiscard.forEach(cardElement => {
+                const cardName = cardElement.textContent;
+                const index = hand.findIndex(cardObj => cardObj.name === cardName);
+                if (index > -1) {
+                    const discardedCard = hand.splice(index, 1)[0];
+                    discardPile.push(discardedCard); // 将弃掉的卡牌移入弃牌堆
+                    updateDiscardPileDisplay(); // 实时更新弃牌堆显示
+                }
+            });
+
+            sortHandCards();
+            updateHandCount();
+
+            clearSelectedCards();
+            selectedCardsForDiscard = [];
+
+            totalHandValue = hand.reduce((sum, card) => sum + card.attack, 0);
+            if (totalHandValue < requiredHealth) {
+                alert(`你的剩余手牌总攻击力(${totalHandValue})仍不足以抵挡 Boss 的攻击力(${requiredHealth})`);
+                gameOver();
+            }
+        } else {
+            alert("手牌总攻击力不足，请重新选择！");
+        }
+    }
+
+    discardBtn.addEventListener('click', handleDiscardClick);
+}
+
+function activateSkill(card) {
+    switch (card.suit) {
+        case '❤':
+            console.log(`红桃治疗生效！从弃牌堆抽取 ${getCardValue(card)} 张牌并放回卡组底部。`);
+            break;
+        case '♦':
+            console.log(`方片抽牌生效！从卡组抽取 ${getCardValue(card)} 张牌。`);
+            break;
+        case '♣':
+            console.log(`草花攻击生效！造成双倍伤害！`);
+            break;
+        case '♠':
+            console.log(`黑桃防御生效！Boss 攻击力永久降低了 ${getCardValue(card)} 点。`);
+            break;
+    }
+}
+
+// 新增方法：获取卡牌数值
+function getCardValue(card) {
+    const name = card.name;
+    if (/^\d+$/.test(name)) { // 如果卡牌名称是纯数字
+        return parseInt(name, 10);
+    } else {
+        // 解析卡牌名称中的数字部分
+        const match = name.match(/^(\d+)/);
+        if (match && match[1]) {
+            return parseInt(match[1], 10);
+        }
+    }
+    return 0; // 默认返回 0
 }
 
 // 新增：绘制下一个Boss
@@ -703,109 +795,6 @@ function clearEventListeners() {
     }
 }
 
-function takeBossCounterAttack(playerAttack) {
-    const bossAttack = parseInt(document.getElementById('boss-attack').textContent);
-    const requiredHealth = bossAttack;
-
-    // 提示玩家选择弃牌
-    alert(`Boss 的攻击力为 ${bossAttack}，请选择手牌总攻击力不低于此值的牌进行弃牌！`);
-
-    // 计算当前手牌总攻击力
-    const totalHandValue = hand.reduce((sum, card) => sum + card.attack, 0);
-
-    if (totalHandValue < requiredHealth) {
-        console.log("手牌总攻击力不足，无法抵挡 Boss 攻击！");
-        alert(`你的手牌总攻击力(${totalHandValue})不足以抵挡 Boss 的攻击力(${requiredHealth})`);
-        gameOver(); // 调用游戏结束逻辑
-        return;
-    }
-
-    // 清除已有事件监听器（避免重复绑定）
-    clearEventListeners();
-
-    // 新增：允许用户逐步选择弃牌
-    let selectedCardsForDiscard = []; // 存储用户选择的手牌
-
-    // 获取手牌容器和弃牌按钮
-    const handContainer = document.getElementById('hand-cards');
-    const discardBtn = document.getElementById('discard-btn');
-
-    if (!handContainer || !discardBtn) {
-        console.error("未找到手牌容器或弃牌按钮！");
-        return;
-    }
-
-    // 新增：为手牌添加点击事件以实现选中/取消选中
-    function handleCardClick(event) {
-        const cardElement = event.target.closest('.hand-card');
-        if (!cardElement) return;
-
-        // 切换选中状态
-        if (selectedCardsForDiscard.includes(cardElement)) {
-            selectedCardsForDiscard = selectedCardsForDiscard.filter(c => c !== cardElement);
-            cardElement.classList.remove('selected');
-        } else {
-            selectedCardsForDiscard.push(cardElement);
-            cardElement.classList.add('selected');
-        }
-
-        // 动态提示当前选中的总攻击力
-        const totalSelectedAttack = selectedCardsForDiscard.reduce((sum, cardElement) => {
-            const cardName = cardElement.textContent;
-            const card = hand.find(cardObj => cardObj.name === cardName);
-            return sum + (card ? card.attack : 0); // 累加攻击力
-        }, 0);
-
-        console.log(`当前选中的总攻击力: ${totalSelectedAttack}`);
-    }
-
-    // 绑定手牌点击事件
-    handContainer._clickHandlers = [handleCardClick]; // 存储事件处理器
-    handContainer.addEventListener('click', handleCardClick);
-
-    // 定义弃牌按钮点击事件
-    function handleDiscardClick() {
-        // 动态计算当前选中的手牌总攻击力
-        const totalSelectedAttack = selectedCardsForDiscard.reduce((sum, cardElement) => {
-            const cardName = cardElement.textContent;
-            const card = hand.find(cardObj => cardObj.name === cardName);
-            return sum + (card ? card.attack : 0); // 累加攻击力
-        }, 0);
-
-        if (totalSelectedAttack >= requiredHealth) {
-            alert("成功承受反击！");
-
-            // 只移除选中的手牌
-            selectedCardsForDiscard.forEach(cardElement => {
-                const cardName = cardElement.textContent;
-                const index = hand.findIndex(cardObj => cardObj.name === cardName);
-                if (index > -1) {
-                    hand.splice(index, 1); // 从手牌数组中移除选中的卡牌
-                }
-            });
-
-            sortHandCards(); // 排序手牌
-            updateHandCount(); // 更新手牌数显示
-
-            // 清空选中状态
-            clearSelectedCards();
-            selectedCardsForDiscard = []; // 清空临时存储的选中卡片
-
-            // 检查剩余手牌是否仍不足以抵挡 Boss 攻击
-            const remainingTotalHandValue = hand.reduce((sum, card) => sum + card.attack, 0);
-            if (remainingTotalHandValue < requiredHealth) {
-                alert(`你的剩余手牌总攻击力(${remainingTotalHandValue})仍不足以抵挡 Boss 的攻击力(${requiredHealth})`);
-                gameOver(); // 调用游戏结束逻辑
-            }
-        } else {
-            alert("手牌总攻击力不足，请重新选择！");
-        }
-    }
-
-    // 绑定弃牌按钮点击事件
-    discardBtn.addEventListener('click', handleDiscardClick);
-}
-
 // 新增：清空选中状态的公共方法
 function clearSelectedCards() {
     console.log("清空选中状态...");
@@ -836,8 +825,19 @@ function gameOver() {
 function updateDiscardPileDisplay() {
     const discardText = document.querySelector('.discard-text');
     if (discardText) {
+        console.log(`更新弃牌堆显示: 当前弃牌堆大小为 ${discardPile.length}`);
         discardText.textContent = `弃牌堆 (${discardPile.length})`;
     } else {
         console.error("未找到弃牌堆文本元素！");
+    }
+}
+
+function updateDeckDisplay() {
+    const deckText = document.querySelector('.deck-text');
+    if (deckText) {
+        console.log(`更新卡牌堆显示: 当前卡牌堆大小为 ${deck.length}`);
+        deckText.textContent = `卡牌堆 (${deck.length})`;
+    } else {
+        console.error("未找到卡牌堆文本元素！");
     }
 }
