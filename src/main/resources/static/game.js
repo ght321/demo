@@ -621,6 +621,9 @@ function takeBossCounterAttack(playerAttack) {
         return;
     }
 
+    // 清除之前的事件监听器以避免重复绑定
+    clearEventListeners();
+
     function handleCardClick(event) {
         const cardElement = event.target.closest('.hand-card');
         if (!cardElement) return;
@@ -675,22 +678,63 @@ function takeBossCounterAttack(playerAttack) {
     }
 
     discardBtn.addEventListener('click', handleDiscardClick);
+
+    // 存储事件处理器以便后续清理
+    handContainer._clickHandlers = [handleCardClick];
+    discardBtn._clickHandlers = [handleDiscardClick];
 }
 
+// 新增：清除事件监听器的公共方法
+function clearEventListeners() {
+    const handContainer = document.getElementById('hand-cards');
+    const discardBtn = document.getElementById('discard-btn');
+
+    if (handContainer) {
+        const clickHandlers = handContainer._clickHandlers || [];
+        clickHandlers.forEach(handler => {
+            handContainer.removeEventListener('click', handler);
+        });
+        delete handContainer._clickHandlers; // 删除存储的事件处理器
+    }
+
+    if (discardBtn) {
+        const clickHandlers = discardBtn._clickHandlers || [];
+        clickHandlers.forEach(handler => {
+            discardBtn.removeEventListener('click', handler);
+        });
+        delete discardBtn._clickHandlers; // 删除存储的事件处理器
+    }
+}
+
+// 新增：红桃技能逻辑
 function activateSkill(card) {
     switch (card.suit) {
         case '❤':
             console.log(`红桃治疗生效！从弃牌堆抽取 ${getCardValue(card)} 张牌并放回卡组底部。`);
+            const drawCount = Math.min(discardPile.length, getCardValue(card));
+            for (let i = 0; i < drawCount; i++) {
+                const drawnCard = discardPile.pop(); // 从弃牌堆顶部取出一张牌
+                deck.unshift(drawnCard); // 将牌放回卡组底部
+            }
+            updateDeckDisplay(); // 更新卡牌堆显示
+            updateDiscardPileDisplay(); // 更新弃牌堆显示
             break;
         case '♦':
             console.log(`方片抽牌生效！从卡组抽取 ${getCardValue(card)} 张牌。`);
+            const drawFromDeckCount = Math.min(deck.length, getCardValue(card));
+            for (let i = 0; i < drawFromDeckCount; i++) {
+                if (deck.length > 0) {
+                    hand.push(deck.shift()); // 从卡组顶部抽取一张牌
+                    sortHandCards(); // 排序手牌
+                    updateHandCount(); // 更新手牌数显示
+                }
+            }
             break;
         case '♣':
             console.log(`草花攻击生效！造成双倍伤害！`);
             break;
         case '♠':
             console.log(`黑桃防御生效！Boss 攻击力永久降低了 ${getCardValue(card)} 点。`);
-            // 确保 Boss 攻击力更新后同步到页面显示
             const bossAttackElement = document.getElementById('boss-attack');
             if (bossAttackElement) {
                 let currentAttack = parseInt(bossAttackElement.textContent);
@@ -793,20 +837,6 @@ function drawNextBoss() {
     }
 }
 
-// 新增：清除事件监听器的公共方法
-function clearEventListeners() {
-    const handContainer = document.getElementById('hand-cards');
-
-    if (handContainer) {
-        // 移除手牌容器的所有点击事件监听器
-        const clickHandlers = handContainer._clickHandlers || [];
-        clickHandlers.forEach(handler => {
-            handContainer.removeEventListener('click', handler);
-        });
-        handContainer._clickHandlers = []; // 清空存储的事件处理器
-    }
-}
-
 // 新增：清空选中状态的公共方法
 function clearSelectedCards() {
     console.log("清空选中状态...");
@@ -844,6 +874,7 @@ function updateDiscardPileDisplay() {
     }
 }
 
+// 更新卡牌堆显示
 function updateDeckDisplay() {
     const deckText = document.querySelector('.deck-text');
     if (deckText) {
@@ -853,3 +884,59 @@ function updateDeckDisplay() {
         console.error("未找到卡牌堆文本元素！");
     }
 }
+
+// 新增方法：监听游戏状态更新事件
+function listenForGameStateUpdates() {
+    const socketUrl = "ws://localhost:8080"; // WebSocket 地址
+    let socket;
+
+    function connectWebSocket() {
+        try {
+            console.log("尝试连接 WebSocket...");
+            socket = new WebSocket(socketUrl);
+
+            // 监听 WebSocket 打开事件
+            socket.onopen = function(event) {
+                console.log("WebSocket 连接已成功建立！");
+            };
+
+            // 监听 WebSocket 消息事件
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'stateUpdated') {
+                    console.log("收到游戏状态更新通知！");
+                    updateBossDeckDisplay(); // 更新 Boss 卡组显示
+                    updateDiscardPileDisplay(); // 更新弃牌堆显示
+                    updateDeckDisplay(); // 更新卡牌堆显示
+                }
+            };
+
+            // 监听 WebSocket 错误事件
+            socket.onerror = function(error) {
+                console.error("WebSocket 连接发生错误:", error);
+                alert("无法连接到服务器，请检查网络或服务器配置！");
+                setTimeout(connectWebSocket, 5000); // 5秒后尝试重新连接
+            };
+
+            // 监听 WebSocket 关闭事件
+            socket.onclose = function(event) {
+                console.warn("WebSocket 连接已关闭。原因:", event.reason || "未知原因");
+                alert("与服务器的连接已断开，请刷新页面重试！");
+                setTimeout(connectWebSocket, 5000); // 5秒后尝试重新连接
+            };
+        } catch (e) {
+            console.error("WebSocket 初始化失败:", e);
+            alert("WebSocket 初始化失败，请检查地址是否正确！");
+        }
+    }
+
+    // 在页面加载完成后启动监听
+    document.addEventListener('DOMContentLoaded', () => {
+        connectWebSocket();
+    });
+}
+
+// 在页面加载完成后启动监听
+document.addEventListener('DOMContentLoaded', () => {
+    listenForGameStateUpdates();
+});

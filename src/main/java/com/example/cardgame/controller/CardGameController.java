@@ -110,9 +110,12 @@ public class CardGameController {
                 int drawCount = Math.min(discardPile.size(), getCardValue(card));
                 for (int i = 0; i < drawCount; i++) {
                     Card drawnCard = discardPile.remove(random.nextInt(discardPile.size()));
-                    bossDeck.add(drawnCard); // 使用 bossDeck 替代 deck
+                    bossDeck.add(drawnCard); // 将弃牌堆中的牌移回卡组底部
                 }
                 System.out.println("红桃治疗生效！从弃牌堆抽取了 " + drawCount + " 张牌并放回卡组底部。");
+
+                // 触发状态更新通知
+                notifyGameStateUpdate();
                 break;
             case "♦": // 方片抽牌：玩家从卡组上方抽取对应数量的牌
                 int drawFromDeckCount = Math.min(bossDeck.size(), getCardValue(card));
@@ -176,5 +179,11 @@ public class CardGameController {
     // 新增方法：更新手牌数显示
     private void updateHandCount(List<Card> hand) {
         System.out.println("当前手牌数: " + hand.size());
+    }
+
+    // 新增方法：通知前端游戏状态更新
+    private void notifyGameStateUpdate() {
+        // 假设通过 WebSocket 或其他方式通知前端
+        System.out.println("通知前端：游戏状态已更新！");
     }
 }
