@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.Arrays; // 新增此行导入
+import java.util.Arrays;
 import com.example.cardgame.model.Boss;
 import com.example.cardgame.model.Card;
 import com.example.cardgame.model.Player;
@@ -12,11 +12,11 @@ import com.example.cardgame.model.Player;
 public class CardGameController {
 
     private Random random;
-    private List<Card> discardPile; // 新增弃牌堆变量
+    private List<Card> discardPile;
 
     public CardGameController() {
         random = new Random();
-        discardPile = new ArrayList<>(); // 初始化弃牌堆
+        discardPile = new ArrayList<>();
     }
 
     public void startGame() {
@@ -75,7 +75,7 @@ public class CardGameController {
                 break;
             }
 
-            // 激活技能阶段
+            // 激活技能阶段（调整至伤害计算之前）
             activateSkill(playedCard, currentBoss, cardDeck, playerDeck);
 
             // 对敌人造成伤害阶段
@@ -155,6 +155,7 @@ public class CardGameController {
         int damage = card.getAttack();
         if ("♣".equals(card.getSuit())) {
             damage *= 2; // 草花双倍伤害
+            System.out.println("草花攻击生效！原始攻击力: " + card.getAttack() + " -> 翻倍后攻击力: " + damage); // 调试日志
         }
         return Math.max(0, damage - boss.getDefense());
     }

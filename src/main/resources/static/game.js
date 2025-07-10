@@ -552,11 +552,15 @@ function playCard() {
         return null;
     }).filter(card => card !== null);
 
-    const totalAttack = playedCards.reduce((sum, card) => sum + card.attack, 0);
+    let totalAttack = playedCards.reduce((sum, card) => sum + card.attack, 0);
 
     // 激活技能阶段
     playedCards.forEach(card => {
         activateSkill(card); // 调用技能激活函数
+        if (card.suit === '♣') { // 草花牌额外处理
+            totalAttack *= 2; // 确保草花牌攻击力翻倍
+            console.log(`草花攻击生效！原始攻击力: ${playedCards.reduce((sum, c) => sum + c.attack, 0)} -> 翻倍后攻击力: ${totalAttack}`);
+        }
     });
 
     // 更新当前 Boss 的生命值
@@ -686,6 +690,14 @@ function activateSkill(card) {
             break;
         case '♠':
             console.log(`黑桃防御生效！Boss 攻击力永久降低了 ${getCardValue(card)} 点。`);
+            // 确保 Boss 攻击力更新后同步到页面显示
+            const bossAttackElement = document.getElementById('boss-attack');
+            if (bossAttackElement) {
+                let currentAttack = parseInt(bossAttackElement.textContent);
+                const defenseValue = getCardValue(card);
+                currentAttack = Math.max(0, currentAttack - defenseValue);
+                bossAttackElement.textContent = currentAttack;
+            }
             break;
     }
 }
