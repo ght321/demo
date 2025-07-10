@@ -37,8 +37,9 @@ function initializeDeck(cards) {
     // 更新卡牌堆显示
     updateDeckDisplay();
 
-    // 初始化手牌数显示
+    // 初始化手牌数和抽卡堆剩余卡牌数显示
     updateHandCount();
+    updateDeckCount(); // 确保初始化时更新抽卡堆剩余卡牌数
 
     // 确保手牌排序和显示同步更新
     sortHandCards(); // 排序手牌
@@ -718,17 +719,20 @@ function activateSkill(card) {
             }
             updateDeckDisplay(); // 更新卡牌堆显示
             updateDiscardPileDisplay(); // 更新弃牌堆显示
+            updateDeckCount(); // 实时更新抽卡堆剩余卡牌数
             break;
         case '♦':
             console.log(`方片抽牌生效！从卡组抽取 ${getCardValue(card)} 张牌。`);
             const drawFromDeckCount = Math.min(deck.length, getCardValue(card));
-            for (let i = 0; i < drawFromDeckCount; i++) {
-                if (deck.length > 0) {
+            for (let i = 0; i < drawFromDeckCount && hand.length < 12; i++) { // 增加手牌上限检查
+                if (deck.length > 0) { // 修改：使用 length 属性检查是否为空
                     hand.push(deck.shift()); // 从卡组顶部抽取一张牌
-                    sortHandCards(); // 排序手牌
-                    updateHandCount(); // 更新手牌数显示
                 }
             }
+            sortHandCards(); // 排序手牌
+            updateHandCount(); // 更新手牌数显示
+            updateDeckDisplay(); // 实时更新卡牌堆显示
+            updateDeckCount(); // 实时更新抽卡堆剩余卡牌数
             break;
         case '♣':
             console.log(`草花攻击生效！造成双倍伤害！`);
