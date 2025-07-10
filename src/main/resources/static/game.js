@@ -5,6 +5,9 @@ function shuffleDeck(cards) {
     }
 }
 
+// 新增全局变量声明
+let currentPhase = 'play'; // 初始化当前阶段为出牌阶段
+
 function initializeDeck(cards) {
     // 使用所有卡牌
     deck = cards;
@@ -44,6 +47,100 @@ function initializeDeck(cards) {
     // 确保手牌排序和显示同步更新
     sortHandCards(); // 排序手牌
     updateHandCount(); // 再次更新手牌数显示
+
+    // 初始化阶段显示
+    const phaseContainer = document.createElement('div');
+    phaseContainer.id = 'phase-display';
+    phaseContainer.style.fontSize = '20px';
+    phaseContainer.style.marginTop = '20px';
+    document.body.appendChild(phaseContainer);
+
+    updatePhaseDisplay(); // 更新阶段显示
+
+    // 自动检测并抽取 Boss
+    autoDrawBoss();
+}
+
+// 更新阶段显示函数
+function updatePhaseDisplay() {
+    const phaseContainer = document.getElementById('phase-display');
+    if (phaseContainer) {
+        let currentPhaseText = "";
+        switch (currentPhase) {
+            case 'play':
+                currentPhaseText = "当前阶段：出牌";
+                break;
+            case 'discard':
+                currentPhaseText = "当前阶段：弃牌";
+                break;
+            default:
+                currentPhaseText = "未知阶段";
+        }
+        phaseContainer.textContent = currentPhaseText;
+    } else {
+        console.error("未找到阶段显示容器！");
+    }
+}
+
+// 新增方法：进入下一个阶段
+function advanceToNextPhase() {
+    switch (currentPhase) {
+        case 'play':
+            currentPhase = 'discard';
+            break;
+        case 'discard':
+            currentPhase = 'play';
+            break;
+        default:
+            console.error("无效的阶段切换！");
+    }
+    updatePhaseDisplay(); // 更新阶段显示
+}
+
+// 新增方法：自动抽取 Boss
+function autoDrawBoss() {
+    if (!currentBoss) {
+        // 确保 bossCards 已加载
+        if (!window.bossCards || window.bossCards.length === 0) {
+            console.error("未找到可用的 Boss 数据！");
+            alert("无法加载 Boss 数据，请检查配置！");
+            return;
+        }
+
+        // 随机选择一张 Boss 卡
+        const randomIndex = Math.floor(Math.random() * window.bossCards.length);
+        const selectedCard = window.bossCards[randomIndex];
+
+        // 更新当前 Boss 显示
+        currentBoss = selectedCard.name;
+
+        const currentBossCard = document.querySelector('.current-boss-card');
+        if (currentBossCard) {
+            currentBossCard.classList.remove('hidden');
+
+            // 设置 Boss 生命值和攻击力
+            const health = selectedCard.defense; // 生命值等于防御值
+            const attack = selectedCard.attack;
+
+            // 动态更新 Boss 的生命值和攻击力显示
+            document.getElementById('boss-health').textContent = health;
+            document.getElementById('boss-attack').textContent = attack;
+
+            currentBossCard.innerHTML = `${selectedCard.name}<br>生命: ${health}<br>攻击: ${attack}`;
+
+            // 设置 data-suit 属性以便后续颜色更新
+            currentBossCard.setAttribute('data-suit', selectedCard.suit);
+
+            // 更新颜色
+            updateBossCardColors();
+        } else {
+            console.error("未找到当前 Boss 卡显示元素！");
+        }
+
+        // 更新已击败 Boss 数量
+        defeatedBossCount++;
+        updateDefeatedBossCount();
+    }
 }
 
 // 新增全局变量声明
@@ -140,11 +237,6 @@ function sortHandCards() {
 
     // 更新手牌数显示
     updateHandCount();
-}
-
-function drawCard() {
-    alert("请使用方片技能卡进行抽卡！");
-    return;
 }
 
 function parseCardInfo(cardText) {
@@ -490,16 +582,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// 为挑战按钮绑定点击事件
-document.addEventListener('DOMContentLoaded', () => {
-    const challengeBtn = document.getElementById('challenge-btn');
-    if (challengeBtn) {
-        challengeBtn.addEventListener('click', drawBoss);
-    } else {
-        console.error("未找到挑战按钮！");
-    }
-});
-
 // 新增全局变量：用于存储当前选中的手牌
 let selectedCards = [];
 
@@ -529,13 +611,20 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
     const playBtn = document.getElementById('play-btn');
     if (playBtn) {
-        playBtn.addEventListener('click', playCard);
+        playBtn.addEventListener('click', () => {
+            playCard();
+        });
     } else {
         console.error("未找到出牌按钮！");
     }
 });
 
 function playCard() {
+    if (currentPhase !== 'play') {
+        alert("现在不是出牌阶段！");
+        return;
+    }
+
     if (selectedCards.length === 0) {
         alert("请先选择要出的手牌！");
         return;
@@ -595,9 +684,17 @@ function playCard() {
     clearSelectedCards();
     sortHandCards();
     updateHandCount();
+
+    // 进入下一个阶段
+    advanceToNextPhase();
 }
 
 function takeBossCounterAttack(playerAttack) {
+    if (currentPhase !== 'discard') {
+        alert("现在不是弃牌阶段！");
+        return;
+    }
+
     const bossAttack = parseInt(document.getElementById('boss-attack').textContent);
     const requiredHealth = bossAttack;
 
@@ -944,3 +1041,23 @@ function listenForGameStateUpdates() {
 document.addEventListener('DOMContentLoaded', () => {
     listenForGameStateUpdates();
 });
+
+// 新增：抽卡函数
+function drawCard() {
+    if (deck.length === 0) {
+        alert("卡组已空！");
+        return;
+    }
+
+    // 从卡组顶部抽取一张牌
+    const drawnCard = deck.shift();
+    hand.push(drawnCard); // 将抽到的牌加入手牌
+
+    // 更新手牌和卡组显示
+    sortHandCards(); // 排序手牌
+    updateHandCount(); // 更新手牌数显示
+    updateDeckDisplay(); // 更新卡牌堆显示
+    updateDeckCount(); // 更新抽卡堆剩余卡牌数显示
+
+    console.log(`成功抽取了一张牌: ${drawnCard.name}`);
+}
