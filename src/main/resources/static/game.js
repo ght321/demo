@@ -38,39 +38,55 @@ function initializeDeck(cards) {
 // 新增方法：自动抽取 Boss
 function autoDrawBoss() {
     if (!currentBoss) {
+        // 确保 bossCards 已加载
         if (!window.bossCards || window.bossCards.length === 0) {
             console.error("未找到可用的 Boss 数据！");
             alert("无法加载 Boss 数据，请检查配置！");
             return;
         }
 
+        // 随机选择一张 Boss 卡
         const randomIndex = Math.floor(Math.random() * window.bossCards.length);
         const selectedCard = window.bossCards[randomIndex];
 
+        // 更新当前 Boss 显示
         currentBoss = selectedCard.name;
 
         const currentBossCard = document.querySelector('.current-boss-card');
         if (currentBossCard) {
             currentBossCard.classList.remove('hidden');
 
-            const health = selectedCard.defense;
+            // 设置 Boss 生命值和攻击力
+            const health = selectedCard.defense; // 生命值等于防御值
             const attack = selectedCard.attack;
 
+            // 动态更新 Boss 的生命值和攻击力显示
             document.getElementById('boss-health').textContent = health;
             document.getElementById('boss-attack').textContent = attack;
 
             currentBossCard.innerHTML = `${selectedCard.name}<br>生命: ${health}<br>攻击: ${attack}`;
+
+            // 设置 data-suit 属性以便后续颜色更新
             currentBossCard.setAttribute('data-suit', selectedCard.suit);
 
+            // 更新颜色
             updateBossCardColors();
         } else {
             console.error("未找到当前 Boss 卡显示元素！");
         }
 
+        // 更新已击败 Boss 数量
         defeatedBossCount++;
         updateDefeatedBossCount();
     }
 }
+
+// 新增全局变量声明
+let hand = []; // 手牌数组
+let deck = []; // 卡牌堆
+let discardPile = []; // 弃牌堆
+let currentBoss = null; // 当前 Boss
+let defeatedBossCount = 0; // 已击败 Boss 数量
 
 function updateHandCount() {
     const handCountDisplay = document.getElementById('hand-count-display');
@@ -625,13 +641,10 @@ function playCard() {
 }
 
 function takeBossCounterAttack(playerAttack) {
-    
-  // 修改：设置当前阶段为弃牌阶段
-    currentPhase = 'discard';
+    // 修改：设置当前阶段为弃牌阶段
+    currentPhase = 'discard'; // 添加分号
 
     console.log("进入弃牌阶段，准备抵挡 Boss 反击...");
-
-   
 
     // 清除之前的事件监听器以避免重复绑定
     clearEventListeners();
@@ -644,7 +657,7 @@ function takeBossCounterAttack(playerAttack) {
     if (bossHealth <= 0 || bossAttack === 0) {
         console.log("Boss 已被击败或无攻击力，自动进入下一阶段！");
         drawNextBoss(); // 确保切换到下一个 Boss
-        currentPhase= 'play'; // 重置阶段为出牌阶段
+        currentPhase = 'play'; // 重置阶段为出牌阶段
         advanceToNextPhase(); // 回到出牌阶段
         return;
     }
@@ -698,7 +711,7 @@ function takeBossCounterAttack(playerAttack) {
     function handleDiscardClick() {
         if (totalHandValue >= bossAttack) {
             console.log("成功承受反击！");
-
+            currentPhase = 'play';
             selectedCardsForDiscard.forEach(cardElement => {
                 const cardName = cardElement.textContent;
                 const index = hand.findIndex(cardObj => cardObj.name === cardName);
@@ -735,8 +748,6 @@ function takeBossCounterAttack(playerAttack) {
     // 存储事件处理器以便后续清理
     handContainer._clickHandlers = [handleCardClick];
     discardBtn._clickHandlers = [handleDiscardClick];
-
-  
 }
 
 function advanceToNextPhase() {
