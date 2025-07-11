@@ -5,9 +5,6 @@ function shuffleDeck(cards) {
     }
 }
 
-// 新增全局变量声明
-let currentPhase = 'play'; // 初始化当前阶段为出牌阶段
-
 function initializeDeck(cards) {
     // 使用所有卡牌
     deck = cards;
@@ -48,53 +45,8 @@ function initializeDeck(cards) {
     sortHandCards(); // 排序手牌
     updateHandCount(); // 再次更新手牌数显示
 
-    // 初始化阶段显示
-    const phaseContainer = document.createElement('div');
-    phaseContainer.id = 'phase-display';
-    phaseContainer.style.fontSize = '20px';
-    phaseContainer.style.marginTop = '20px';
-    document.body.appendChild(phaseContainer);
-
-    updatePhaseDisplay(); // 更新阶段显示
-
     // 自动检测并抽取 Boss
     autoDrawBoss();
-}
-
-// 更新阶段显示函数
-function updatePhaseDisplay() {
-    const phaseContainer = document.getElementById('phase-display');
-    if (phaseContainer) {
-        let currentPhaseText = "";
-        switch (currentPhase) {
-            case 'play':
-                currentPhaseText = "当前阶段：出牌";
-                break;
-            case 'discard':
-                currentPhaseText = "当前阶段：弃牌";
-                break;
-            default:
-                currentPhaseText = "未知阶段";
-        }
-        phaseContainer.textContent = currentPhaseText;
-    } else {
-        console.error("未找到阶段显示容器！");
-    }
-}
-
-// 新增方法：进入下一个阶段
-function advanceToNextPhase() {
-    switch (currentPhase) {
-        case 'play':
-            currentPhase = 'discard';
-            break;
-        case 'discard':
-            currentPhase = 'play';
-            break;
-        default:
-            console.error("无效的阶段切换！");
-    }
-    updatePhaseDisplay(); // 更新阶段显示
 }
 
 // 新增方法：自动抽取 Boss
@@ -574,12 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 为抽卡按钮绑定点击事件
 document.addEventListener('DOMContentLoaded', () => {
-    const drawBtn = document.getElementById('draw-btn');
-    if (drawBtn) {
-        drawBtn.addEventListener('click', drawCard);
-    } else {
-        console.error("未找到抽卡按钮！");
-    }
+
 });
 
 // 新增全局变量：用于存储当前选中的手牌
@@ -619,17 +566,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// 新增全局变量：用于存储当前游戏阶段
+let currentPhase = 'draw'; // 初始阶段为抽牌阶段
+
+function initializeGame() {
+    console.log("游戏初始化...");
+    initializeDeck(window.cards); // 初始化卡牌堆
+    autoDrawBoss(); // 自动抽取 Boss
+    advanceToNextPhase(); // 进入下一个阶段
+}
+
 function playCard() {
-    if (currentPhase !== 'play') {
-        alert("现在不是出牌阶段！");
+    console.log("开始出牌操作...");
+    // 判断当前是否处于弃牌阶段
+    if (currentPhase === 'discard') {
+        console.log("当前处于弃牌阶段，无法出牌！");
+        alert("当前处于弃牌阶段，无法出牌！");
+        logGameEvent("尝试出牌失败：当前处于弃牌阶段，无法出牌！"); // 新增日志记录
         return;
     }
 
+    // 检查是否有选中的手牌
     if (selectedCards.length === 0) {
+        console.log("未选择任何手牌，无法出牌！");
         alert("请先选择要出的手牌！");
         return;
     }
 
+    console.log(`已选择的手牌: ${selectedCards.map(card => card.textContent).join(', ')}`);
+
+    // 处理出牌逻辑
     const playedCards = selectedCards.map(card => {
         const name = card.textContent;
         const index = hand.findIndex(cardObj => cardObj.name === name);
@@ -637,12 +603,14 @@ function playCard() {
             const cardObj = hand.splice(index, 1)[0];
             discardPile.push(cardObj); // 将打出的卡牌移入弃牌堆
             updateDiscardPileDisplay(); // 实时更新弃牌堆显示
+            console.log(`打出卡牌: ${cardObj.name}`);
             return cardObj;
         }
         return null;
     }).filter(card => card !== null);
 
     let totalAttack = playedCards.reduce((sum, card) => sum + card.attack, 0);
+    console.log(`总攻击力: ${totalAttack}`);
 
     // 激活技能阶段
     playedCards.forEach(card => {
@@ -659,59 +627,66 @@ function playCard() {
 
     document.getElementById('boss-health').textContent = newBossHealth;
 
-    if (newBossHealth <= 0) {
-        if (totalAttack === bossHealth) {
-            alert("你感化了该 Boss！将其加入你的牌库。");
-            const currentBossCard = document.querySelector('.current-boss-card');
-            if (currentBossCard) {
-                const bossName = currentBossCard.textContent.split('<br>')[0].trim();
-                const matchingBoss = window.bossCards.find(card => card.name === bossName);
-                if (matchingBoss) {
-                    hand.push(matchingBoss);
-                }
-            }
-        } else {
-            alert("你击败了该 Boss！");
-        }
+    logGameEvent(`玩家使用了 ${playedCards.map(c => c.name).join(', ')}，造成 ${totalAttack} 点伤害！`);
 
-        updateDiscardPileDisplay(); // 实时更新弃牌堆显示
-        drawNextBoss();
+    if (newBossHealth <= 0) {
+        console.log("成功击败 Boss！");
+        alert("你击败了该 Boss！");
+        drawNextBoss(); // 继续挑战下一个 Boss
+        advanceToNextPhase(); // 回到出牌阶段
     } else {
-        alert("Boss 还未被击败，准备承受反击！");
-        takeBossCounterAttack(totalAttack);
+        const bossAttack = parseInt(document.getElementById('boss-attack').textContent);
+        if (bossAttack === 0) {
+            console.log("Boss 已无攻击力！");
+            alert("Boss 已无攻击力！");
+            drawNextBoss(); // 继续挑战下一个 Boss
+            advanceToNextPhase(); // 回到出牌阶段
+        } else {
+            console.log("Boss 还未被击败，准备承受反击！");
+            alert("Boss 还未被击败，准备承受反击！");
+            takeBossCounterAttack(totalAttack); // 进入弃牌阶段
+        }
     }
 
     clearSelectedCards();
     sortHandCards();
     updateHandCount();
-
-    // 进入下一个阶段
-    advanceToNextPhase();
 }
 
 function takeBossCounterAttack(playerAttack) {
-    if (currentPhase !== 'discard') {
-        alert("现在不是弃牌阶段！");
-        return;
-    }
+    
+  // 修改：设置当前阶段为弃牌阶段
+    currentPhase = 'discard';
 
+    console.log("进入弃牌阶段，准备抵挡 Boss 反击...");
+
+   
+
+    // 清除之前的事件监听器以避免重复绑定
+    clearEventListeners();
+
+    const bossHealth = parseInt(document.getElementById('boss-health').textContent);
     const bossAttack = parseInt(document.getElementById('boss-attack').textContent);
-    const requiredHealth = bossAttack;
 
-    // 新增：如果 Boss 攻击力为 0，直接跳过弃牌阶段
-    if (bossAttack === 0) {
-        alert("Boss 已无攻击力，自动进入下一阶段！");
-        advanceToNextPhase();
+    console.log(`Boss 健康值: ${bossHealth}, 攻击力: ${bossAttack}`);
+
+    if (bossHealth <= 0 || bossAttack === 0) {
+        console.log("Boss 已被击败或无攻击力，自动进入下一阶段！");
+        drawNextBoss(); // 确保切换到下一个 Boss
+        currentPhase= 'play'; // 重置阶段为出牌阶段
+        advanceToNextPhase(); // 回到出牌阶段
         return;
     }
 
-    alert(`Boss 的攻击力为 ${bossAttack}，请选择手牌总攻击力不低于此值的牌进行弃牌！`);
+    logGameEvent(`Boss 攻击力为 ${bossAttack}，玩家需要弃牌抵挡反击！`);
+
+    console.log(`Boss 的攻击力为 ${bossAttack}，请选择手牌总攻击力不低于此值的牌进行弃牌！`);
 
     let totalHandValue = hand.reduce((sum, card) => sum + card.attack, 0);
+    console.log(`当前手牌总攻击力: ${totalHandValue}`);
 
-    if (totalHandValue < requiredHealth) {
-        console.log("手牌总攻击力不足，无法抵挡 Boss 攻击！");
-        alert(`你的手牌总攻击力(${totalHandValue})不足以抵挡 Boss 的攻击力(${requiredHealth})`);
+    if (totalHandValue < bossAttack) {
+        console.log(`手牌总攻击力不足，无法抵挡 Boss 攻击！`);
         gameOver();
         return;
     }
@@ -725,9 +700,6 @@ function takeBossCounterAttack(playerAttack) {
         console.error("未找到手牌容器或弃牌按钮！");
         return;
     }
-
-    // 清除之前的事件监听器以避免重复绑定
-    clearEventListeners();
 
     function handleCardClick(event) {
         const cardElement = event.target.closest('.hand-card');
@@ -753,8 +725,8 @@ function takeBossCounterAttack(playerAttack) {
     handContainer.addEventListener('click', handleCardClick);
 
     function handleDiscardClick() {
-        if (totalHandValue >= requiredHealth) {
-            alert("成功承受反击！");
+        if (totalHandValue >= bossAttack) {
+            console.log("成功承受反击！");
 
             selectedCardsForDiscard.forEach(cardElement => {
                 const cardName = cardElement.textContent;
@@ -763,8 +735,11 @@ function takeBossCounterAttack(playerAttack) {
                     const discardedCard = hand.splice(index, 1)[0];
                     discardPile.push(discardedCard); // 将弃掉的卡牌移入弃牌堆
                     updateDiscardPileDisplay(); // 实时更新弃牌堆显示
+                    console.log(`弃掉了 ${discardedCard.name} (${discardedCard.attack} 攻击力)`);
                 }
             });
+
+            logGameEvent(`玩家弃掉了 ${selectedCardsForDiscard.map(c => c.textContent).join(', ')}，成功抵挡 Boss 反击！`);
 
             sortHandCards();
             updateHandCount();
@@ -773,12 +748,14 @@ function takeBossCounterAttack(playerAttack) {
             selectedCardsForDiscard = [];
 
             totalHandValue = hand.reduce((sum, card) => sum + card.attack, 0);
-            if (totalHandValue < requiredHealth) {
-                alert(`你的剩余手牌总攻击力(${totalHandValue})仍不足以抵挡 Boss 的攻击力(${requiredHealth})`);
+            if (totalHandValue < bossAttack) {
+                console.log(`你的剩余手牌总攻击力(${totalHandValue})仍不足以抵挡 Boss 的攻击力(${bossAttack})`);
                 gameOver();
+            } else {
+                advanceToNextPhase(); // 回到出牌阶段
             }
         } else {
-            alert("手牌总攻击力不足，请重新选择！");
+            console.log("手牌总攻击力不足，请重新选择！");
         }
     }
 
@@ -787,6 +764,34 @@ function takeBossCounterAttack(playerAttack) {
     // 存储事件处理器以便后续清理
     handContainer._clickHandlers = [handleCardClick];
     discardBtn._clickHandlers = [handleDiscardClick];
+
+  
+}
+
+function advanceToNextPhase() {
+    console.log(`当前游戏阶段: ${currentPhase}`);
+    if (currentPhase === 'draw') {
+        console.log("进入抽牌阶段...");
+        // 抽牌阶段：初始化手牌
+        const initialHandSize = 12;
+        while (hand.length < initialHandSize && deck.length > 0) {
+            hand.push(deck.shift()); // 从卡组顶部抽取一张牌
+        }
+        sortHandCards(); // 排序手牌
+        updateHandCount(); // 更新手牌数显示
+        currentPhase = 'play'; // 进入出牌阶段
+        logGameEvent("进入出牌阶段..."); // 新增：记录当前阶段
+    } else if (currentPhase === 'play') {
+        console.log("进入出牌阶段...");
+        // 出牌阶段：等待玩家操作
+        logGameEvent("当前处于出牌阶段..."); // 新增：记录当前阶段
+    } else if (currentPhase === 'discard') {
+        console.log("进入弃牌阶段...");
+        // 弃牌阶段：等待玩家操作
+        logGameEvent("当前处于弃牌阶段..."); // 新增：记录当前阶段
+        // 确保不会跳过弃牌阶段
+        return;
+    }
 }
 
 // 新增：清除事件监听器的公共方法
@@ -824,6 +829,8 @@ function activateSkill(card) {
             updateDeckDisplay(); // 更新卡牌堆显示
             updateDiscardPileDisplay(); // 更新弃牌堆显示
             updateDeckCount(); // 实时更新抽卡堆剩余卡牌数
+
+            logGameEvent(`红桃治疗生效！从弃牌堆抽取了 ${drawCount} 张牌并放回卡组底部。`);
             break;
         case '♦':
             console.log(`方片抽牌生效！从卡组抽取 ${getCardValue(card)} 张牌。`);
@@ -837,9 +844,12 @@ function activateSkill(card) {
             updateHandCount(); // 更新手牌数显示
             updateDeckDisplay(); // 实时更新卡牌堆显示
             updateDeckCount(); // 实时更新抽卡堆剩余卡牌数
+
+            logGameEvent(`方片抽牌生效！从卡组抽取了 ${drawFromDeckCount} 张牌。`);
             break;
         case '♣':
             console.log(`草花攻击生效！造成双倍伤害！`);
+            logGameEvent(`草花攻击生效！造成双倍伤害！`);
             break;
         case '♠':
             console.log(`黑桃防御生效！Boss 攻击力永久降低了 ${getCardValue(card)} 点。`);
@@ -849,6 +859,8 @@ function activateSkill(card) {
                 const defenseValue = getCardValue(card);
                 currentAttack = Math.max(0, currentAttack - defenseValue);
                 bossAttackElement.textContent = currentAttack;
+
+                logGameEvent(`黑桃防御生效！Boss 攻击力永久降低了 ${defenseValue} 点。`);
             }
             break;
     }
@@ -940,7 +952,10 @@ function drawNextBoss() {
         // 更新已击败 Boss 数量
         defeatedBossCount++;
         updateDefeatedBossCount();
+
+        logGameEvent(`成功击败了 ${currentBoss}，继续挑战下一个 Boss！`); // 修复：将 previousBoss 替换为 currentBoss
     } else {
+        logGameEvent("没有更多的 Boss 卡可供挑战！");
         alert("没有更多的 Boss 卡可供挑战！");
     }
 }
@@ -1067,4 +1082,20 @@ function drawCard() {
     updateDeckCount(); // 更新抽卡堆剩余卡牌数显示
 
     console.log(`成功抽取了一张牌: ${drawnCard.name}`);
+}
+
+// 新增：日志记录函数
+function logGameEvent(message) {
+    const logContainer = document.getElementById('game-log');
+    if (!logContainer) {
+        console.error("未找到日志容器！");
+        return;
+    }
+
+    const logEntry = document.createElement('p');
+    logEntry.textContent = message;
+    logContainer.appendChild(logEntry);
+
+    // 滚动到底部
+    logContainer.scrollTop = logContainer.scrollHeight;
 }
