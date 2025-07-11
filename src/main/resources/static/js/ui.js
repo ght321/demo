@@ -1,5 +1,6 @@
 // UI 相关操作
 import { deck, hand, discardPile } from './deck.js';
+import { defeatedBossCount } from './boss.js';
 
 export function updateHandCount() {
     const handCountDisplay = document.getElementById('hand-count-display');
@@ -16,7 +17,10 @@ export function updateDeckCount() {
 }
 
 export function updateDefeatedBossCount() {
-
+    const countDisplay = document.getElementById('defeated-boss-count');
+    if (countDisplay) {
+        countDisplay.textContent = `已击败 Boss 数量: ${defeatedBossCount}`;
+    }
 }
 
 export function logGameEvent(message) {

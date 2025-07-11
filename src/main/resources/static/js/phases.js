@@ -1,6 +1,7 @@
 // 游戏阶段与流程控制
 import { hand, deck, discardPile, initializeDeck, updateDiscardPileDisplay } from './deck.js';
-import { autoDrawBoss, currentBoss, resetBossProgress } from './boss.js';
+// 导入increaseDefeatedBossCount函数
+import { autoDrawBoss, currentBoss, resetBossProgress, defeatedBossCount, updateDefeatedBossCount, increaseDefeatedBossCount } from './boss.js';
 import { sortHandCards, clearSelectedCards } from './hand.js';
 import { updateHandCount, logGameEvent } from './ui.js';
 
@@ -39,6 +40,9 @@ export function advanceToNextPhase(nextPhase) {
                 if (typeof autoDrawBoss === 'function') autoDrawBoss(window.bossCards);
 
 
+                // 增加击败Boss计数并更新显示
+                if (typeof increaseDefeatedBossCount === 'function') increaseDefeatedBossCount();
+
                 logGameEvent('你击败了一个Boss！');
                 // 这里直接 return，等待玩家操作或新阶段由 UI 触发，避免 Boss UI 没刷新
                 return;
@@ -59,12 +63,12 @@ export function advanceToNextPhase(nextPhase) {
                 if (typeof window.currentBoss !== 'undefined') window.currentBoss = null;
                 if (typeof autoDrawBoss === 'function') autoDrawBoss(window.bossCards);
 
+                // 增加击败Boss计数并更新显示
+                if (typeof increaseDefeatedBossCount === 'function') increaseDefeatedBossCount();
 
                 logGameEvent('你击败了一个Boss！');
-                // 这里直接 return，等待玩家操作或新阶段由 UI 触发，避免 Boss UI 没刷新
-                return;
             }
-            // 如果没有 bossCards 也直接 return
+            advanceToNextPhase('play');
             return;
         }
         if (bossAttack === 0) {

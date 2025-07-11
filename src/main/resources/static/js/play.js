@@ -5,6 +5,7 @@ import { selectedCards, sortHandCards, clearSelectedCards } from './hand.js';
 import { activateSkill } from './skills.js';
 import { logGameEvent } from './ui.js';
 import { currentPhase, advanceToNextPhase } from './phases.js';
+import { increaseDefeatedBossCount, defeatedBossCount } from './boss.js'; // 新增导入defeatedBossCount
 
 export function playCard() {
     logGameEvent(`【当前阶段】${currentPhase}`);
@@ -57,6 +58,19 @@ export function playCard() {
         }, 300);
     } else {
         logGameEvent('Boss被击败，继续游戏！');
-        if (typeof advanceToNextPhase === 'function') advanceToNextPhase('play');
+        // Boss被击败，直接进入抽牌阶段
+        window.setTimeout(() => {
+            // 先检查Boss生命值是否真的小于等于0，再增加计数器
+            const bossHealthSpan = document.getElementById('boss-health');
+            let currentBossHealth = 0;
+            if (bossHealthSpan) {
+                currentBossHealth = parseInt(bossHealthSpan.textContent);
+            }
+            if (currentBossHealth <= 0) {
+                
+                logGameEvent(`已击败 Boss 数量: ${defeatedBossCount}`);
+            }
+            if (typeof advanceToNextPhase === 'function') advanceToNextPhase('draw');
+        }, 300);
     }
 }
