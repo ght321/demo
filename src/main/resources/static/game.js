@@ -6,14 +6,12 @@ function shuffleDeck(cards) {
 }
 
 function initializeDeck(cards) {
-    // 使用所有卡牌
     deck = cards;
 
     console.log("初始化卡牌堆:", deck); // 调试日志
 
     if (!Array.isArray(deck) || deck.length === 0) {
         console.error("卡牌堆初始化失败，未找到符合条件的卡牌！");
-        // 提供默认卡牌数据
         deck = [
             { name: "1❤", attack: 2, defense: 3, type: "普通", skill: null, suit: "❤" },
             { name: "2♦", attack: 4, defense: 6, type: "普通", skill: null, suit: "♦" },
@@ -24,82 +22,55 @@ function initializeDeck(cards) {
 
     shuffleDeck(deck); // 洗牌
 
-    // 新增：从卡组中抽取12张牌作为初始手牌
     const initialHandSize = 12;
     while (hand.length < initialHandSize && deck.length > 0) {
         hand.push(deck.shift()); // 从卡组顶部抽取一张牌
     }
 
-    if (deck.length === 0 && hand.length < initialHandSize) {
-        console.warn("卡组不足12张牌，已将剩余牌全部加入手牌！");
-    }
-
-    // 更新卡牌堆显示
     updateDeckDisplay();
-
-    // 初始化手牌数和抽卡堆剩余卡牌数显示
     updateHandCount();
-    updateDeckCount(); // 确保初始化时更新抽卡堆剩余卡牌数
+    updateDeckCount();
+    sortHandCards();
 
-    // 确保手牌排序和显示同步更新
-    sortHandCards(); // 排序手牌
-    updateHandCount(); // 再次更新手牌数显示
-
-    // 自动检测并抽取 Boss
     autoDrawBoss();
 }
 
 // 新增方法：自动抽取 Boss
 function autoDrawBoss() {
     if (!currentBoss) {
-        // 确保 bossCards 已加载
         if (!window.bossCards || window.bossCards.length === 0) {
             console.error("未找到可用的 Boss 数据！");
             alert("无法加载 Boss 数据，请检查配置！");
             return;
         }
 
-        // 随机选择一张 Boss 卡
         const randomIndex = Math.floor(Math.random() * window.bossCards.length);
         const selectedCard = window.bossCards[randomIndex];
 
-        // 更新当前 Boss 显示
         currentBoss = selectedCard.name;
 
         const currentBossCard = document.querySelector('.current-boss-card');
         if (currentBossCard) {
             currentBossCard.classList.remove('hidden');
 
-            // 设置 Boss 生命值和攻击力
-            const health = selectedCard.defense; // 生命值等于防御值
+            const health = selectedCard.defense;
             const attack = selectedCard.attack;
 
-            // 动态更新 Boss 的生命值和攻击力显示
             document.getElementById('boss-health').textContent = health;
             document.getElementById('boss-attack').textContent = attack;
 
             currentBossCard.innerHTML = `${selectedCard.name}<br>生命: ${health}<br>攻击: ${attack}`;
-
-            // 设置 data-suit 属性以便后续颜色更新
             currentBossCard.setAttribute('data-suit', selectedCard.suit);
 
-            // 更新颜色
             updateBossCardColors();
         } else {
             console.error("未找到当前 Boss 卡显示元素！");
         }
 
-        // 更新已击败 Boss 数量
         defeatedBossCount++;
         updateDefeatedBossCount();
     }
 }
-
-// 新增全局变量声明
-let hand = []; // 手牌数组
-let discardPile = []; // 弃牌堆数组
-let currentBoss = null; // 当前 Boss
-let defeatedBossCount = 0; // 已击败 Boss 数量
 
 function updateHandCount() {
     const handCountDisplay = document.getElementById('hand-count-display');
