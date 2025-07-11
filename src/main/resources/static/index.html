@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <title>卡牌对战小游戏</title>
     <link rel="stylesheet" href="/style.css">
-    <script src="/game.js"></script>
+    <!-- <script src="/game.js"></script> -->
+    <script type="module" src="/js/game.js"></script>
     <style>
         /* 美化页面布局 */
         body {
@@ -182,7 +183,7 @@
         攻击: <span id="boss-attack">0</span>
     </div>
 
-    <!-- 已击败 Boss 数量显示 -->
+    <!-- 新增：已击败的Boss数量显示区域 -->
     <div id="defeated-boss-count" style="margin-top: 10px; font-size: 18px;">已击败 Boss 数量: 0</div>
 
     <!-- 玩家手牌区域 -->
