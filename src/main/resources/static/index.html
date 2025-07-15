@@ -3,9 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <title>卡牌对战小游戏</title>
+    <style>
+        .user-info {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.85);
+            border-radius: 12px;
+            padding: 8px 16px 8px 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            z-index: 100;
+        }
+        .user-info img {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid #4a90e2;
+            background: #eee;
+        }
+        .user-info span {
+            font-weight: bold;
+            color: #4a90e2;
+            font-size: 18px;
+        }
+    </style>
     <link rel="stylesheet" href="/style.css">
     <!-- <script src="/game.js"></script> -->
     <script type="module" src="/js/game.js"></script>
+    <script>
+        // 头像生成函数（可根据用户名生成不同颜色/首字母）
+        function getAvatarUrl(username) {
+            // 可替换为你自己的头像生成逻辑或静态图片
+            // 这里用 https://ui-avatars.com/ 生成
+            return 'https://ui-avatars.com/api/?name=' + encodeURIComponent(username) + '&background=4a90e2&color=fff&rounded=true&size=64';
+        }
+        function showUserInfo() {
+            const params = new URLSearchParams(window.location.search);
+            const username = params.get('username');
+            if (username) {
+                const userDiv = document.createElement('div');
+                userDiv.className = 'user-info';
+                userDiv.innerHTML = `<img src="${getAvatarUrl(username)}" alt="头像"><span>${username}</span>`;
+                document.body.appendChild(userDiv);
+            }
+        }
+        window.addEventListener('DOMContentLoaded', showUserInfo);
+    </script>
     <style>
         /* 美化页面布局 */
         body {

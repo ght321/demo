@@ -84,9 +84,11 @@
             <button type="submit">登录</button>
         </form>
         <div id="loginMsg"></div>
+        <button id="toGameBtn" style="display:none;margin-top:16px;width:100%;background:linear-gradient(90deg,#27ae60 0%,#00c9a7 100%);">进入游戏</button>
         <a class="link" href="/register.html">没有账号？去注册</a>
     </div>
     <script>
+        let loginUser = null;
         document.getElementById('loginForm').onsubmit = async function(e) {
             e.preventDefault();
             const form = e.target;
@@ -101,16 +103,26 @@
             if (resp.ok) {
                 const user = await resp.json();
                 if (user && user.id) {
+                    loginUser = user;
                     document.getElementById('loginMsg').style.color = '#27ae60';
                     document.getElementById('loginMsg').innerText = '登录成功，欢迎 ' + user.username;
-                    // 可跳转到游戏主页面
+                    document.getElementById('toGameBtn').style.display = '';
                 } else {
                     document.getElementById('loginMsg').style.color = '#e74c3c';
                     document.getElementById('loginMsg').innerText = '用户名或密码错误';
+                    document.getElementById('toGameBtn').style.display = 'none';
                 }
             } else {
                 document.getElementById('loginMsg').style.color = '#e74c3c';
                 document.getElementById('loginMsg').innerText = '请求失败';
+                document.getElementById('toGameBtn').style.display = 'none';
+            }
+        };
+        document.getElementById('toGameBtn').onclick = function(e) {
+            e.preventDefault();
+            if (loginUser && loginUser.username) {
+                // 跳转到index.html并带上用户名参数
+                window.location.href = '/index.html?username=' + encodeURIComponent(loginUser.username);
             }
         };
     </script>
