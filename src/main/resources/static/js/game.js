@@ -1,4 +1,6 @@
 // 游戏主入口
+// 负责页面加载后初始化游戏数据、绑定事件、首次渲染UI。
+// 加载卡牌数据，初始化各模块，启动游戏主流程。
 import { initializeGame, advanceToNextPhase } from './phases.js';
 import { bindHandCardClick, bindPlayButton } from './events.js';
 import { updateBossCardColors } from './boss.js';
@@ -10,6 +12,7 @@ window.addEventListener('DOMContentLoaded', () => {
         .then(cardsData => {
             window.cards = cardsData.cards;
             window.bossCards = cardsData.bossCards;
+            console.log('bossCards:', window.bossCards); // 调试输出
             initializeGame(window.cards);
             updateHandCount();
             updateDeckCount();

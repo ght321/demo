@@ -1,4 +1,6 @@
 // 事件绑定与监听
+// 负责绑定手牌点击、出牌按钮等用户交互事件。
+// 通过事件驱动调用playCard等主流程函数。
 import { playCard } from './play.js';
 import { selectedCards } from './hand.js';
 

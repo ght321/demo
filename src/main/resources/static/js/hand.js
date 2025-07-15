@@ -1,4 +1,6 @@
 // 手牌与出牌相关逻辑
+// 管理手牌的排序、选中、清除选中等操作。
+// 负责手牌的UI渲染和交互（如点击选中、取消选中）。
 import { hand, discardPile, updateDiscardPileDisplay } from './deck.js';
 
 export let selectedCards = [];

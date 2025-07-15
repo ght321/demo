@@ -1,4 +1,7 @@
 // 出牌与弃牌主逻辑
+// 负责玩家出牌、技能激活、对Boss造成伤害、弃牌抵挡Boss攻击等。
+// 处理出牌阶段和弃牌阶段的具体操作，调用阶段切换函数。
+// 只在击败Boss后进入抽牌阶段，否则进入弃牌阶段。
 
 import { hand, discardPile, updateDiscardPileDisplay } from './deck.js';
 import { selectedCards, sortHandCards, clearSelectedCards } from './hand.js';
@@ -29,11 +32,24 @@ export function playCard() {
         return null;
     }).filter(card => card !== null);
     let totalAttack = playedCards.reduce((sum, card) => sum + card.attack, 0);
+    // 草花技能：只要有草花，最后总伤害翻倍（只翻倍一次）
+    if (playedCards.some(card => card.suit === '♣')) {
+        totalAttack *= 2;
+    }
+    // 技能生效判定：如果卡牌花色与当前Boss花色相同，则技能无效
+    const bossCard = document.querySelector('.current-boss-card');
+    let bossSuit = '';
+    if (bossCard) {
+        bossSuit = bossCard.getAttribute('data-suit') || '';
+    }
     playedCards.forEach(card => {
-        activateSkill(card);
-        if (card.suit === '♣') {
-            totalAttack *= 2;
+        if (card.suit !== bossSuit) {
+            if(card.suit=='♠')
+            totalAttack*=2;
+            else
+            activateSkill(card);
         }
+        // 否则技能无效，不调用activateSkill
     });
 
     // Boss 生命值处理
@@ -60,16 +76,7 @@ export function playCard() {
         logGameEvent('Boss被击败，继续游戏！');
         // Boss被击败，直接进入抽牌阶段
         window.setTimeout(() => {
-            // 先检查Boss生命值是否真的小于等于0，再增加计数器
-            const bossHealthSpan = document.getElementById('boss-health');
-            let currentBossHealth = 0;
-            if (bossHealthSpan) {
-                currentBossHealth = parseInt(bossHealthSpan.textContent);
-            }
-            if (currentBossHealth <= 0) {
-                
-                logGameEvent(`已击败 Boss 数量: ${defeatedBossCount}`);
-            }
+            // 不再处理弃牌逻辑，直接进入抽牌阶段
             if (typeof advanceToNextPhase === 'function') advanceToNextPhase('draw');
         }, 300);
     }

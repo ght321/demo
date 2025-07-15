@@ -1,14 +1,15 @@
 package com.example.cardgame.web;
 
-import com.example.cardgame.model.Card;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.cardgame.model.Card;
 
 @RestController
 @RequestMapping("/api")
@@ -36,6 +37,7 @@ public class CardApiController {
 
         for (int i = 0; i < suits.length; i++) {
             for (int j = 0; j < bossNames.length; j++) {
+                // 修正为 J❤ Q♦ K♠ 格式
                 bossCards.add(new Card(bossNames[j] + suits[i], bossAttacks[j], bossDefenses[j], "Boss", null, suits[i]));
             }
         }

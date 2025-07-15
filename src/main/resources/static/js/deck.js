@@ -1,4 +1,7 @@
 // 卡牌堆与手牌相关逻辑
+// 管理抽牌堆、弃牌堆、手牌的初始化、洗牌、抽牌、弃牌等。
+// 提供牌堆和弃牌堆的UI更新方法。
+
 export let deck = [];
 export let hand = [];
 export let discardPile = [];

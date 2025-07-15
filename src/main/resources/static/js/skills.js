@@ -1,4 +1,6 @@
 // 技能与卡牌效果
+// 负责根据卡牌花色激活不同技能（如回血、抽牌、Boss减攻等）。
+// 技能效果直接影响牌堆、手牌、Boss属性等。
 import { deck, hand, discardPile, updateDeckDisplay, updateDiscardPileDisplay } from './deck.js';
 import { updateDeckCount } from './ui.js';
 
@@ -16,14 +18,15 @@ export function activateSkill(card) {
             break;
         case '♦':
             const drawFromDeckCount = Math.min(deck.length, getCardValue(card));
-            for (let i = 0; i < drawFromDeckCount && hand.length < 12; i++) {
+            // 注意：这里手牌上限应与主流程一致
+            for (let i = 0; i < drawFromDeckCount && hand.length < 9; i++) {
                 if (deck.length > 0) {
                     hand.push(deck.shift());
                 }
             }
             break;
         case '♣':
-            // 草花攻击效果在主流程处理
+            // 草花攻击效果已在主流程处理，这里无需任何操作
             break;
         case '♠':
             const bossAttackElement = document.getElementById('boss-attack');

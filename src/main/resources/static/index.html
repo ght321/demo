@@ -160,6 +160,89 @@
             font-weight: bold;
             color: #333;
         }
+
+        /* 新增：胜利弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+            animation: modalIn 0.4s;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close-btn:hover,
+        .close-btn:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* 新增：胜利图标样式 */
+        .victory-icon {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        /* 新增：胜利标题样式 */
+        .victory-title {
+            color: #4CAF50;
+            font-size: 24px;
+            margin: 10px 0;
+        }
+
+        /* 新增：胜利信息样式 */
+        .victory-message {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        /* 新增：重新开始按钮样式 */
+        .victory-restart-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .victory-restart-btn:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -218,6 +301,16 @@
     <div id="game-area">
         <button id="discard-btn">丢弃</button> <!-- 新增：丢弃按钮 -->
         <div id="game-output"></div>
+    </div>
+
+    <div id="victory-modal" class="modal hidden">
+        <div class="modal-content victory-modal-content">
+            <span class="close-btn">&times;</span>
+            <div class="victory-icon">🏆</div>
+            <h2 class="victory-title">恭喜通关！</h2>
+            <p class="victory-message">你成功击败了所有12个Boss，恢复了大陆的和平！</p>
+            <button id="restart-game-btn" class="victory-restart-btn">重新开始</button>
+        </div>
     </div>
 
 </body>
