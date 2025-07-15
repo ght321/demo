@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>用户登录</title>
+</head>
+<body>
+    <h2>用户登录</h2>
+    <form id="loginForm">
+        用户名：<input type="text" name="username" required><br>
+        密码：<input type="password" name="password" required><br>
+        <button type="submit">登录</button>
+    </form>
+    <div id="loginMsg"></div>
+    <script>
+        document.getElementById('loginForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const form = e.target;
+            const params = new URLSearchParams();
+            params.append('username', form.username.value);
+            params.append('password', form.password.value);
+            const resp = await fetch('/api/user/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: params
+            });
+            if (resp.ok) {
+                const user = await resp.json();
+                if (user && user.id) {
+                    document.getElementById('loginMsg').innerText = '登录成功，欢迎 ' + user.username;
+                    // 可跳转到游戏主页面
+                } else {
+                    document.getElementById('loginMsg').innerText = '用户名或密码错误';
+                }
+            } else {
+                document.getElementById('loginMsg').innerText = '请求失败';
+            }
+        };
+    </script>
+    <a href="/register.html">没有账号？去注册</a>
+</body>
+</html>
