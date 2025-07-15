@@ -2,7 +2,6 @@
 // 负责手牌数、牌堆数、击败Boss数等UI的实时更新。
 // 管理游戏日志的显示，只保留历史消息和当前阶段消息，避免日志混乱。
 import { deck, hand, discardPile } from './deck.js';
-import { defeatedBossCount } from './boss.js';
 
 export function updateHandCount() {
     const handCountDisplay = document.getElementById('hand-count-display');
@@ -20,8 +19,9 @@ export function updateDeckCount() {
 
 export function updateDefeatedBossCount() {
     const countDisplay = document.getElementById('defeated-boss-count');
+    const count = window.defeatedBossList ? window.defeatedBossList.length : 0;
     if (countDisplay) {
-        countDisplay.textContent = `已击败 Boss 数量: ${defeatedBossCount}`;
+        countDisplay.textContent = `已击败 Boss 数量: ${count}`;
     }
 }
 

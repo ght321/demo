@@ -41,6 +41,7 @@ public class UserService {
         return "用户不存在";
     }
 
+
     public Integer getProgress(String username) {
         User user = userRepository.findByUsername(username);
         return user != null ? user.getDefeatedBossCount() : null;

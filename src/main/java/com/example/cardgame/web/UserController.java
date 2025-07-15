@@ -26,10 +26,12 @@ public class UserController {
         return userService.login(username, password);
     }
 
+
     @PostMapping("/saveProgress")
     public String saveProgress(@RequestParam String username, @RequestParam int defeatedBossCount) {
         return userService.saveProgress(username, defeatedBossCount);
     }
+
 
     @GetMapping("/progress")
     public Integer getProgress(@RequestParam String username) {

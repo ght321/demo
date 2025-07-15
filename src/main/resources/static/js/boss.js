@@ -4,10 +4,12 @@
 // 负责判断是否通关（击败所有Boss），并在胜利时跳转到胜利界面。
 
 export let currentBoss = null;
-export let defeatedBossCount = 0; // 初始为0，只有在击败Boss后才增加
 
 let bossOrderList = [];
 let bossIndex = 0;
+// 用于存档的全局变量
+window.bossList = [];
+window.defeatedBossList = [];
 
 // 常量定义
 const BOSS_ORDER = ['J', 'Q', 'K'];
@@ -24,15 +26,25 @@ const DOM_ELEMENTS = {
 
 // 新增：递增击败Boss数量
 export function increaseDefeatedBossCount() {
-    defeatedBossCount++;
+    // 只在当前Boss未被记录时才push，防止重复
+    if (!window.defeatedBossList.some(b => b && b.id === window.currentBoss.id)) {
+        window.defeatedBossList.push(window.currentBoss);
+    }
+    // 始终用 defeatedBossList.length 作为唯一数据源
+    window.defeatedBossCount = window.defeatedBossList.length;
+    // console.log('defeatedBossCount:', window.defeatedBossCount, 'defeatedBossList.length:', window.defeatedBossList.length);
     updateDefeatedBossCount();
-    checkVictoryCondition(); // 每次递增后检查胜利
+    checkVictoryCondition();
+    // 保证每次击败Boss后 gameState 立即同步
+    if (typeof window.updateGameState === 'function') {
+        window.updateGameState();
+    }
 }
 
 export function resetBossProgress() {
     bossOrderList = [];
     bossIndex = 0;
-    defeatedBossCount = 0; // 重置击败的Boss数量
+    window.defeatedBossList = [];
     updateDefeatedBossCount();
 }
 
@@ -87,6 +99,8 @@ function buildBossOrderList(bossList) {
         }
         bossOrderList = ordered;
         bossIndex = 0;
+        // 同步剩余boss到window
+        window.bossList = bossOrderList.slice(bossIndex);
     }
 }
 
@@ -126,6 +140,7 @@ export function autoDrawBoss(bossList) {
     if (!bossList || bossList.length === 0) {
         currentBoss = null;
         clearBossDisplay();
+        window.bossList = [];
         return;
     }
     buildBossOrderList(bossList);
@@ -135,6 +150,7 @@ export function autoDrawBoss(bossList) {
     if (bossIndex >= bossOrderList.length) {
         currentBoss = null;
         handleGameVictory();
+        window.bossList = [];
         return;
     }
 
@@ -143,12 +159,15 @@ export function autoDrawBoss(bossList) {
     if (!nextBoss) {
         currentBoss = null;
         handleGameVictory();
+        window.bossList = [];
         return;
     }
 
     currentBoss = nextBoss;
     displayBossInfo(currentBoss);
     bossIndex++;
+    // 同步剩余boss到window
+    window.bossList = bossOrderList.slice(bossIndex);
 }
 
 export function updateBossCardColors() {
@@ -185,9 +204,11 @@ function updateCardColor(card) {
 }
 
 export function updateDefeatedBossCount() {
+    // 始终用 window.defeatedBossList.length 作为唯一数据源
     const countDisplay = DOM_ELEMENTS.defeatedBossCount();
+    const count = window.defeatedBossList.length;
     if (countDisplay) {
-        countDisplay.textContent = `已击败 Boss 数量: ${defeatedBossCount}`;
+        countDisplay.textContent = `已击败 Boss 数量: ${count}`;
     }
 }
 
@@ -207,7 +228,7 @@ export function hideVictoryMessage() {
 
 // 核心胜利条件判断函数
 export function checkVictoryCondition() {
-    if (defeatedBossCount >= TOTAL_BOSS_COUNT) {
+    if (window.defeatedBossList.length >= TOTAL_BOSS_COUNT) {
         showVictoryMessage();
         return true;
     }

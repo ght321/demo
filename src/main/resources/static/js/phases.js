@@ -2,7 +2,7 @@
 // 负责游戏的阶段切换与主流程调度。
 import { hand, deck, discardPile, initializeDeck, updateDiscardPileDisplay } from './deck.js';
 // 导入increaseDefeatedBossCount函数
-import { autoDrawBoss, currentBoss, resetBossProgress, defeatedBossCount, updateDefeatedBossCount, increaseDefeatedBossCount } from './boss.js';
+import { autoDrawBoss, currentBoss, resetBossProgress, updateDefeatedBossCount, increaseDefeatedBossCount } from './boss.js';
 import { sortHandCards, clearSelectedCards } from './hand.js';
 import { updateHandCount, logGameEvent } from './ui.js';
 

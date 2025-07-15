@@ -1,3 +1,68 @@
+    <style>
+        .exit-btn {
+            position: fixed;
+            left: 24px;
+            bottom: 24px;
+            z-index: 2000;
+            background: linear-gradient(90deg,#e96443 0%,#904e95 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 28px;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+            transition: background 0.2s;
+        }
+        .exit-btn:hover {
+            background: linear-gradient(90deg,#904e95 0%,#e96443 100%);
+        }
+        .exit-modal {
+            display: none;
+            position: fixed;
+            left: 0; top: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+        }
+        .exit-modal-content {
+            background: #fff;
+            border-radius: 12px;
+            padding: 32px 36px 24px 36px;
+            min-width: 320px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        .exit-modal-content button {
+            margin: 0 12px;
+            padding: 8px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+        .exit-modal-content .save-btn {
+            background: linear-gradient(90deg,#27ae60 0%,#00c9a7 100%);
+            color: #fff;
+        }
+        .exit-modal-content .nosave-btn {
+            background: #ccc;
+            color: #333;
+        }
+        .exit-modal-content .cancel-btn {
+            background: #fff;
+            color: #888;
+            border: 1px solid #ccc;
+        }
+        .save-list {
+            margin: 18px 0 8px 0;
+            text-align: left;
+        }
+        .save-list label {
+            margin-right: 18px;
+        }
+    </style>
 <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -34,6 +99,134 @@
     <!-- <script src="/game.js"></script> -->
     <script type="module" src="/js/game.js"></script>
     <script>
+        // 全局同步游戏状态到 window.gameState
+        window.updateGameState = function() {
+            window.gameState = {
+                handCards: window.handCards || [],
+                deck: window.deck || [],
+                discardPile: window.discardPile || [],
+                bossList: window.bossList || [],
+                defeatedBossList: window.defeatedBossList || [],
+                currentBoss: window.currentBoss || null,
+                defeatedBossCount: window.defeatedBossList.length || 0,
+                phase: window.phase || ''
+            };
+        }
+        // 自动同步主状态到 window.* 并刷新 gameState
+        function syncAllGameState() {
+            // 这里假设主状态变量都在 window 上
+            // 如果你的主状态变量在其他对象上，请在此处补充
+            window.updateGameState();
+        }
+        // 合并：进入页面时自动读取存档并恢复所有关键变量
+        window.addEventListener('DOMContentLoaded', function() {
+            // 页面加载后立即同步一次全局状态
+            syncAllGameState();
+            const params = new URLSearchParams(window.location.search);
+            const username = params.get('username');
+            const slot = parseInt(params.get('slot') || 0);
+            if (username) {
+                let saves = JSON.parse(localStorage.getItem('saves_' + username) || '[]');
+                let save = saves[slot];
+                if (save) {
+                    // 恢复击败Boss数
+                    if (typeof save.defeatedBossCount === 'number') {
+                        window.defeatedBossCount = save.defeatedBossCount;
+                        const countSpan = document.getElementById('defeated-boss-count');
+                        if (countSpan) {
+                            countSpan.innerText = '已击败 Boss 数量: ' + window.defeatedBossCount;
+                        }
+                    }
+                    // 恢复剩余boss
+                    if (Array.isArray(save.bossList)) {
+                        window.bossList = save.bossList;
+                    }
+                    // 恢复已击败boss
+                    if (Array.isArray(save.defeatedBossList)) {
+                        window.defeatedBossList = save.defeatedBossList;
+                    }
+                    // 恢复当前阶段
+                    if (typeof save.phase === 'string') {
+                        window.phase = save.phase;
+                    }
+                    // 恢复手牌
+                    if (Array.isArray(save.handCards)) {
+                        window.handCards = save.handCards;
+                        const handDiv = document.getElementById('hand-cards');
+                        if (handDiv) {
+                            handDiv.innerHTML = '';
+                            window.handCards.forEach(card => {
+                                const cardDiv = document.createElement('div');
+                                cardDiv.className = 'hand-card';
+                                cardDiv.innerText = card.name || card.id || '卡牌';
+                                handDiv.appendChild(cardDiv);
+                            });
+                        }
+                        const handCount = document.getElementById('hand-count-display');
+                        if (handCount) {
+                            handCount.innerText = '手牌数: ' + window.handCards.length;
+                        }
+                    }
+                    // 恢复牌堆
+                    if (Array.isArray(save.deck)) {
+                        window.deck = save.deck;
+                        const deckCount = document.getElementById('deck-count-display');
+                        if (deckCount) {
+                            deckCount.innerText = '抽卡堆剩余卡牌数: ' + window.deck.length;
+                        }
+                    }
+                    // 恢复弃牌堆
+                    if (Array.isArray(save.discardPile)) {
+                        window.discardPile = save.discardPile;
+                        const discardDiv = document.querySelector('.discard-text');
+                        if (discardDiv) {
+                            discardDiv.innerText = '弃牌堆 (' + (window.discardPile.length ? window.discardPile.length : '空') + ')';
+                        }
+                    }
+                    // 恢复当前Boss
+                    if (save.currentBoss) {
+                        window.currentBoss = save.currentBoss;
+                        const bossCard = document.querySelector('.current-boss-card');
+                        if (bossCard) {
+                            bossCard.classList.remove('hidden');
+                            bossCard.innerText = save.currentBoss.name || save.currentBoss.id || 'Boss';
+                        }
+                        if (typeof save.currentBoss.health === 'number') {
+                            const healthSpan = document.getElementById('boss-health');
+                            if (healthSpan) healthSpan.innerText = save.currentBoss.health;
+                        }
+                        if (typeof save.currentBoss.attack === 'number') {
+                            const attackSpan = document.getElementById('boss-attack');
+                            if (attackSpan) attackSpan.innerText = save.currentBoss.attack;
+                        }
+                    }
+                    // 存档恢复后自动刷新主界面（如有updateUI函数）
+                    if (typeof window.updateUI === 'function') {
+                        window.updateUI();
+                    }
+                }
+            }
+        });
+        // 存档系统：最多3个本地存档
+        function getSaves(username) {
+            const saves = JSON.parse(localStorage.getItem('saves_' + username) || '[]');
+            return saves;
+        }
+        function setSaves(username, saves) {
+            localStorage.setItem('saves_' + username, JSON.stringify(saves));
+        }
+        // 保存进度到后端
+        async function saveProgress(username, defeatedBossCount) {
+            const params = new URLSearchParams();
+            params.append('username', username);
+            params.append('defeatedBossCount', defeatedBossCount);
+            const resp = await fetch('/api/user/saveProgress', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: params
+            });
+            return await resp.text();
+        }
         // 头像生成函数（可根据用户名生成不同颜色/首字母）
         function getAvatarUrl(username) {
             // 可替换为你自己的头像生成逻辑或静态图片
@@ -48,7 +241,105 @@
                 userDiv.className = 'user-info';
                 userDiv.innerHTML = `<img src="${getAvatarUrl(username)}" alt="头像"><span>${username}</span>`;
                 document.body.appendChild(userDiv);
-            }
+                // 左下角添加退出按钮
+                const exitBtn = document.createElement('button');
+                exitBtn.className = 'exit-btn';
+                exitBtn.innerText = '退出游戏';
+                exitBtn.onclick = () => showExitModal(username);
+                document.body.appendChild(exitBtn);
+                // 退出弹窗
+                const modal = document.createElement('div');
+                modal.className = 'exit-modal';
+                modal.innerHTML = `
+                  <div class="exit-modal-content">
+                    <div style="font-size:18px;margin-bottom:12px;">是否保存当前游戏进度？</div>
+                    <div class="save-list">
+                      <div>选择存档位（最多3个）：</div>
+                      <label><input type="radio" name="saveSlot" value="0" checked> 存档1</label>
+                      <label><input type="radio" name="saveSlot" value="1"> 存档2</label>
+                      <label><input type="radio" name="saveSlot" value="2"> 存档3</label>
+                    </div>
+                    <button class="save-btn">保存并退出</button>
+                    <button class="nosave-btn">直接退出</button>
+                    <button class="cancel-btn">取消</button>
+                  </div>
+                `;
+                document.body.appendChild(modal);
+                // 事件绑定
+                modal.querySelector('.save-btn').onclick = async function() {
+                  // 存档前强制同步一次 window.gameState
+                  window.updateGameState();
+                  window.handCards = window.gameState.handCards || [];
+                  window.deck = window.gameState.deck || [];
+                  window.discardPile = window.gameState.discardPile || [];
+                  window.bossList = window.gameState.bossList || [];
+                  window.defeatedBossList = window.gameState.defeatedBossList || [];
+                  window.currentBoss = window.gameState.currentBoss || null;
+                  window.defeatedBossCount = window.gameState.defeatedBossCount || 0;
+                  window.phase = window.gameState.phase || '';
+                  // 存档前打印所有关键变量，便于调试
+                  console.log('handCards', window.handCards);
+                  console.log('deck', window.deck);
+                  console.log('discardPile', window.discardPile);
+                  console.log('bossList', window.bossList);
+                  console.log('defeatedBossList', window.defeatedBossList);
+                  console.log('currentBoss', window.currentBoss);
+                  console.log('defeatedBossCount', window.defeatedBossCount);
+                  console.log('phase', window.phase);
+                  try {
+                    // 获取选中的存档位
+                    const slot = Number(modal.querySelector('input[name="saveSlot"]:checked').value);
+                    // 组装后端需要的参数结构
+                    const postData = {
+                      username: username,
+                      slot: slot,
+                      defeatedBossCount: window.defeatedBossCount || 0,
+                      phase: window.phase || '',
+                      currentBossId: window.currentBoss?.id || null,
+                      currentBossHp: window.currentBoss?.health || null,
+                      currentBossAttack: window.currentBoss?.attack || null,
+                      handCards: window.handCards || [],
+                      deckCards: window.deck || [],
+                      discardCards: window.discardPile || [],
+                      bossList: window.bossList || [],
+                      defeatedBossList: window.defeatedBossList || []
+                    };
+                    console.log('存档数据', postData);
+                    const resp = await fetch('/api/save/full', {
+                      method: 'POST',
+                      headers: {'Content-Type': 'application/json'},
+                      body: JSON.stringify(postData)
+                    });
+                    const text = await resp.text();
+                    alert(text);
+                    setTimeout(function(){
+                      window.location.href = '/login.html';
+                    }, 200);
+                  } catch(e) {
+                    alert('存档异常：' + e.message);
+                  }
+                };
+                modal.querySelector('.nosave-btn').onclick = function() {
+                  window.location.href = '/login.html';
+                };
+                modal.querySelector('.cancel-btn').onclick = function() {
+                  modal.style.display = 'none';
+                };
+                window.showExitModal = function(username) {
+                  // 展示存档信息
+                  let saves = getSaves(username);
+                  let radios = modal.querySelectorAll('input[name="saveSlot"]');
+                  radios.forEach((r,i)=>{
+                    let label = r.parentElement;
+                    if(saves[i]){
+                      label.innerHTML = `<input type="radio" name="saveSlot" value="${i}" ${i===0?'checked':''}> 存档${i+1}（${saves[i].time}，击败Boss数：${saves[i].defeatedBossCount}）`;
+                    }else{
+                      label.innerHTML = `<input type="radio" name="saveSlot" value="${i}" ${i===0?'checked':''}> 存档${i+1}（空）`;
+                    }
+                  });
+                  modal.style.display = 'flex';
+                }
+              }
         }
         window.addEventListener('DOMContentLoaded', showUserInfo);
     </script>
@@ -325,6 +616,25 @@
 
     <!-- 新增出牌按钮 -->
     <button id="play-btn">出牌</button> <!-- 添加出牌按钮 -->
+
+    <script>
+    // 必须等 DOM 加载后再绑定事件，否则找不到按钮
+    window.addEventListener('DOMContentLoaded', function() {
+        var playBtn = document.getElementById('play-btn');
+        if (playBtn) {
+            playBtn.addEventListener('click', function() {
+                setTimeout(syncAllGameState, 100);
+            });
+        }
+        var discardBtn = document.getElementById('discard-btn');
+        if (discardBtn) {
+            discardBtn.addEventListener('click', function() {
+                setTimeout(syncAllGameState, 100);
+            });
+        }
+        // 你可以根据实际游戏流程，继续为其他操作按钮添加 syncAllGameState 调用
+    });
+    </script>
 
     <!-- 抽卡堆剩余卡牌数显示栏 -->
     <div id="deck-count-display" style="margin-top: 10px; font-size: 18px;">抽卡堆剩余卡牌数: 0</div>

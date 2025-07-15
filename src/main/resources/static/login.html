@@ -85,6 +85,15 @@
         </form>
         <div id="loginMsg"></div>
         <button id="toGameBtn" style="display:none;margin-top:16px;width:100%;background:linear-gradient(90deg,#27ae60 0%,#00c9a7 100%);">进入游戏</button>
+        <!-- 存档选择弹窗 -->
+        <div id="choose-save-modal" style="display:none;position:fixed;z-index:4000;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;">
+          <div style="background:#fff;border-radius:12px;min-width:320px;box-shadow:0 4px 24px rgba(0,0,0,0.15);padding:32px 36px 24px 36px;text-align:center;">
+            <div style="font-size:20px;margin-bottom:16px;">请选择要进入的存档</div>
+            <div id="choose-save-list" style="margin-bottom:18px;text-align:left;"></div>
+            <button id="enter-save-btn" style="background:linear-gradient(90deg,#27ae60 0%,#00c9a7 100%);color:#fff;margin-right:12px;">进入存档</button>
+            <button id="cancel-save-btn" style="background:#ccc;color:#333;">取消</button>
+          </div>
+        </div>
         <a class="link" href="/register.html">没有账号？去注册</a>
     </div>
     <script>
@@ -118,11 +127,31 @@
                 document.getElementById('toGameBtn').style.display = 'none';
             }
         };
+        // 存档选择弹窗逻辑
         document.getElementById('toGameBtn').onclick = function(e) {
             e.preventDefault();
             if (loginUser && loginUser.username) {
-                // 跳转到index.html并带上用户名参数
-                window.location.href = '/index.html?username=' + encodeURIComponent(loginUser.username);
+                // 展示存档选择弹窗
+                const modal = document.getElementById('choose-save-modal');
+                const list = document.getElementById('choose-save-list');
+                const enterBtn = document.getElementById('enter-save-btn');
+                const cancelBtn = document.getElementById('cancel-save-btn');
+                // 获取本地存档
+                let saves = JSON.parse(localStorage.getItem('saves_' + loginUser.username) || '[]');
+                list.innerHTML = '';
+                for(let i=0;i<3;i++) {
+                  let s = saves[i];
+                  list.innerHTML += `<label style='display:block;margin-bottom:8px;'><input type='radio' name='chooseSlot' value='${i}' ${i===0?'checked':''}> 存档${i+1} ` + (s ? `（${s.time}，击败Boss数：${s.defeatedBossCount}）` : '（空）') + `</label>`;
+                }
+                modal.style.display = 'flex';
+                enterBtn.onclick = function() {
+                  let slot = parseInt(document.querySelector('input[name="chooseSlot"]:checked').value);
+                  // 跳转到index.html并带上用户名和存档编号参数
+                  window.location.href = '/index.html?username=' + encodeURIComponent(loginUser.username) + '&slot=' + slot;
+                };
+                cancelBtn.onclick = function() {
+                  modal.style.display = 'none';
+                };
             }
         };
     </script>

@@ -21,7 +21,7 @@ public class User {
 
     private String password;
 
-    // 可扩展：保存游戏进度（如击败Boss数、手牌等）
+    // 可扩展：保存游戏进度（如击败Boss数）
     private int defeatedBossCount;
 
     // getter/setter

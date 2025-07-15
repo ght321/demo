@@ -8,7 +8,7 @@ import { selectedCards, sortHandCards, clearSelectedCards } from './hand.js';
 import { activateSkill } from './skills.js';
 import { logGameEvent } from './ui.js';
 import { currentPhase, advanceToNextPhase } from './phases.js';
-import { increaseDefeatedBossCount, defeatedBossCount } from './boss.js'; // 新增导入defeatedBossCount
+import { increaseDefeatedBossCount } from './boss.js';
 
 export function playCard() {
     logGameEvent(`【当前阶段】${currentPhase}`);
