@@ -447,6 +447,15 @@
             }
             // 调用 applyArchiveState 恢复游戏状态，并强制刷新UI
             applyArchiveState(archive);
+            // 正确赋值 window.currentBoss 和 window.defeatedBossCount
+            if (archive.currentBoss !== undefined) {
+                window.currentBoss = archive.currentBoss;
+                console.log('赋值后 window.currentBoss:', window.currentBoss);
+            }
+            if (archive.defeatedBossCount !== undefined) {
+                window.defeatedBossCount = archive.defeatedBossCount;
+                console.log('赋值后 window.defeatedBossCount:', window.defeatedBossCount);
+            }
             // 新增：同步boss.js的currentBoss和defeatedBossCount
             syncBossStateFromWindow();
             if (typeof window.updateGameUI === 'function') {
@@ -463,6 +472,18 @@
                 if (!userId) {
                     alert('请先登录或注册');
                     return;
+                }
+                // 自动同步 boss.js 的 currentBoss/defeatedBossCount 到 window
+                try {
+                    const bossModule = await import('/js/boss.js');
+                    if (typeof bossModule.currentBoss !== 'undefined') {
+                        window.currentBoss = bossModule.currentBoss;
+                    }
+                    if (typeof bossModule.defeatedBossCount !== 'undefined') {
+                        window.defeatedBossCount = bossModule.defeatedBossCount;
+                    }
+                } catch (e) {
+                    // 忽略同步异常
                 }
                 // 存档时直接调用 getCurrentGameState，确保采集到最新的手牌和所有状态
                 const gameState = JSON.stringify(getCurrentGameState());

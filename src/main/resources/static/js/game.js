@@ -81,16 +81,17 @@ export function applyArchiveState(archive) {
 
 // 提供统一导出当前游戏状态的方法
 export function getCurrentGameState() {
-    return {
+    const state = {
         cards: window.cards,
         hand: window.hand,
         deck: window.deck,
         discardPile: window.discardPile,
         bossCards: window.bossCards,
-        currentBoss: window.currentBoss,
-        defeatedBossCount: window.defeatedBossCount
-        // ...如有其它状态一并返回
+        currentBoss: window.currentBoss,           // 确保包含当前boss
+        defeatedBossCount: window.defeatedBossCount // 确保包含已击败boss数量
     };
+    console.log('存档内容:', state);
+    return state;
 }
 
 // 说明：如果数据库只存储了 cards 和 bossCards，说明 window.hand、window.deck、window.discardPile、window.currentBoss、window.defeatedBossCount 在存档时是 undefined 或空。
