@@ -1,10 +1,14 @@
 // 游戏主入口
 // 负责页面加载后初始化游戏数据、绑定事件、首次渲染UI。
 // 加载卡牌数据，初始化各模块，启动游戏主流程。
-import { initializeGame, advanceToNextPhase } from './phases.js';
-import { bindHandCardClick, bindPlayButton } from './events.js';
-import { updateBossCardColors } from './boss.js';
+import { hand, deck, discardPile, updateDiscardPileDisplay, updateDeckDisplay } from './deck.js';
+import { sortHandCards } from './hand.js';
 import { updateHandCount, updateDeckCount, updateDefeatedBossCount } from './ui.js';
+import { updateBossCardColors } from './boss.js';
+import { bindHandCardClick, bindPlayButton, bindDiscardButton } from './events.js';
+import { discardSelectedCards, currentPhase as phasesCurrentPhase, applyArchivePhaseState } from './phases.js';
+import { applyArchiveBossState } from './boss.js';
+import { initializeGame, advanceToNextPhase } from './phases.js';
 
 window.addEventListener('DOMContentLoaded', () => {
     fetch('/api/cards')
@@ -13,7 +17,14 @@ window.addEventListener('DOMContentLoaded', () => {
             window.cards = cardsData.cards;
             window.bossCards = cardsData.bossCards;
             console.log('bossCards:', window.bossCards); // 调试输出
-            initializeGame(window.cards);
+            // 修正：确保 initializeGame 已正确导入并可用
+            if (typeof initializeGame === 'function') {
+                initializeGame(window.cards);
+            } else if (typeof window.initializeGame === 'function') {
+                window.initializeGame(window.cards);
+            } else {
+                console.error('initializeGame 未定义，请检查 phases.js 的导出和导入！');
+            }
             updateHandCount();
             updateDeckCount();
             updateDefeatedBossCount();
@@ -32,7 +43,13 @@ window.addEventListener('DOMContentLoaded', () => {
                 { name: "皇后♦", attack: 15, defense: 30, type: "Boss", skill: null, suit: "♦" },
                 { name: "国王♠", attack: 20, defense: 40, type: "Boss", skill: null, suit: "♠" }
             ];
-            initializeGame(window.cards);
+            if (typeof initializeGame === 'function') {
+                initializeGame(window.cards);
+            } else if (typeof window.initializeGame === 'function') {
+                window.initializeGame(window.cards);
+            } else {
+                console.error('initializeGame 未定义，请检查 phases.js 的导出和导入！');
+            }
             updateHandCount();
             updateDeckCount();
             updateDefeatedBossCount();
@@ -56,42 +73,74 @@ window.addEventListener('DOMContentLoaded', () => {
     };
 });
 
-// 新增：暴露一个 applyArchiveState 方法用于恢复游戏状态
+
 export function applyArchiveState(archive) {
+    // 全量同步数据库内的各项数据到当前局面
     window.cards = archive.cards || [];
     window.hand = archive.hand || [];
     window.deck = archive.deck || [];
     window.discardPile = archive.discardPile || [];
     window.bossCards = archive.bossCards || [];
-    // 修正：直接赋值 window.currentBoss，允许为对象（不要用 || null，否则会丢失boss对象）
     window.currentBoss = typeof archive.currentBoss !== 'undefined' ? archive.currentBoss : null;
     window.defeatedBossCount = typeof archive.defeatedBossCount !== 'undefined' ? archive.defeatedBossCount : 0;
+    window.currentPhase = typeof archive.currentPhase !== 'undefined' ? archive.currentPhase : 'play';
 
-    // 同步到 boss.js 的全局变量
-    try {
-        // boss.js 采用 export let currentBoss/defeatedBossCount
-        // 需要通过 window 访问模块变量
-        if (typeof import.meta !== 'undefined') {
-            // ESM环境下无法直接赋值import变量，但window.currentBoss/defeatedBossCount可被boss.js读取
-        } else {
-            // 非模块环境下可直接赋值
-            if (typeof currentBoss !== 'undefined') currentBoss = window.currentBoss;
-            if (typeof defeatedBossCount !== 'undefined') defeatedBossCount = window.defeatedBossCount;
-        }
-    } catch (e) {}
+    // 同步 deck.js 的 hand/deck/discardPile
+    hand.length = 0;
+    window.hand.forEach(card => hand.push(card));
+    deck.length = 0;
+    window.deck.forEach(card => deck.push(card));
+    discardPile.length = 0;
+    window.discardPile.forEach(card => discardPile.push(card));
 
-    // 强制刷新UI
+    // 刷新手牌区DOM和颜色
+    sortHandCards();
+
+    // 刷新UI
+    updateHandCount();
+    updateDeckCount();
+    updateDefeatedBossCount();
+    updateDiscardPileDisplay();
+    updateDeckDisplay();
+
+    // 刷新Boss和手牌的颜色
+    updateBossCardColors();
+
+    // 重新绑定所有事件，确保UI可交互
+    bindHandCardClick();
+    bindPlayButton();
+    bindDiscardButton();
+
+    // 保证弃牌逻辑引用
+    window.discardSelectedCards = (...args) => discardSelectedCards.apply(null, args);
+
+    // 同步阶段和boss相关变量
+    applyArchivePhaseState(archive);
+    applyArchiveBossState(archive);
+
+    // 强制刷新页面所有UI（如果有全局刷新函数）
     if (typeof window.updateGameUI === 'function') window.updateGameUI();
-    // 调试输出
+
+    // 额外：同步 window 变量到 gameState，便于F12调试
+    window.gameState = {
+        get hand() { return window.hand; },
+        get deck() { return window.deck; },
+        get discardPile() { return window.discardPile; },
+        get currentPhase() { return window.currentPhase; },
+        get currentBoss() { return window.currentBoss; },
+        get defeatedBossCount() { return window.defeatedBossCount; }
+    };
+
     console.log('恢复存档后状态:', {
         hand: window.hand,
+        deck: window.deck,
         discardPile: window.discardPile,
+        bossCards: window.bossCards,
         currentBoss: window.currentBoss,
-        defeatedBossCount: window.defeatedBossCount
+        defeatedBossCount: window.defeatedBossCount,
+        currentPhase: window.currentPhase
     });
 }
-
-// 确保每次游戏状态变化时都同步更新 window.hand、window.deck 等全局变量
 
 // 提供统一导出当前游戏状态的方法
 export function getCurrentGameState() {
@@ -110,4 +159,3 @@ export function getCurrentGameState() {
     return state;
 }
 
-// 说明：如果数据库只存储了 cards 和 bossCards，说明 window.hand、window.deck、window.discardPile、window.currentBoss、window.defeatedBossCount 在存档时是 undefined 或空。

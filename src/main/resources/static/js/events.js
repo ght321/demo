@@ -29,3 +29,8 @@ export function bindPlayButton() {
         });
     }
 }
+
+// 新增：导出 bindDiscardButton，确保其它模块可用
+export function bindDiscardButton() {
+    // ...existing code...
+}

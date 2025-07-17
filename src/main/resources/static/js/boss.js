@@ -212,6 +212,35 @@ export function syncBossStateFromWindow() {
     updateDefeatedBossCount();
 }
 
+// 恢复Boss状态
+export function applyArchiveBossState(archive) {
+    // 恢复boss相关变量
+    if (typeof archive.currentBoss !== 'undefined') {
+        // 直接赋值模块变量，确保currentBoss同步
+        currentBoss = archive.currentBoss;
+        window.currentBoss = archive.currentBoss;
+        // 立即刷新Boss显示
+        if (currentBoss) {
+            // 重新渲染boss卡片
+            const currentBossCard = document.querySelector('.current-boss-card');
+            if (currentBossCard) {
+                currentBossCard.classList.remove('hidden');
+                currentBossCard.innerHTML = `${currentBoss.name}<br>生命: ${currentBoss.defense}<br>攻击: ${currentBoss.attack}`;
+                currentBossCard.setAttribute('data-suit', currentBoss.suit);
+            }
+            const bossHealth = document.getElementById('boss-health');
+            if (bossHealth) bossHealth.textContent = currentBoss.defense || '0';
+            const bossAttack = document.getElementById('boss-attack');
+            if (bossAttack) bossAttack.textContent = currentBoss.attack || '0';
+        }
+    }
+    if (typeof archive.defeatedBossCount !== 'undefined') {
+        defeatedBossCount = archive.defeatedBossCount;
+        window.defeatedBossCount = archive.defeatedBossCount;
+    }
+    updateDefeatedBossCount();
+}
+
 // 核心胜利条件判断函数
 export function checkVictoryCondition() {
     if (defeatedBossCount >= TOTAL_BOSS_COUNT) {

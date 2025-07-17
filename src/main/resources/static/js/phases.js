@@ -161,41 +161,38 @@ export function advanceToNextPhase(nextPhase) {
     }
 }
 
-/*
-各个阶段的转化逻辑说明：
+// 导出 discardSelectedCards，供外部调用弃牌逻辑
+export function discardSelectedCards() {
+    if (typeof window.currentPhase !== 'undefined' && window.currentPhase !== 'discard') return;
+    const hand = window.hand || [];
+    const discardPile = window.discardPile || [];
+    const selected = Array.from(document.querySelectorAll('.hand-card.selected'));
+    let total = 0;
+    const toDiscard = [];
+    selected.forEach(cardEl => {
+        const cardName = cardEl.textContent;
+        const idx = hand.findIndex(c => c.name === cardName);
+        if (idx > -1) {
+            const cardObj = hand[idx];
+            total += cardObj.attack;
+            toDiscard.push({ idx, cardObj, cardEl });
+        }
+    });
+   
+}
 
-1. draw（抽牌阶段）
-   - 进入条件：
-     - 游戏初始化时自动进入；
-     - 或击败Boss后自动进入（即play阶段Boss被击败时，或discard阶段Boss被击败时）。
-   - 行为：抽3张牌（不超过手牌上限），自动补充手牌。
-   - 结束后：自动进入play阶段。
+// 新增：导出 applyArchivePhaseState，供 game.js 调用
+export function applyArchivePhaseState(archive) {
+    if (typeof archive.currentPhase !== 'undefined') {
+        currentPhase = archive.currentPhase;
+        window.currentPhase = archive.currentPhase;
+    } else {
+        currentPhase = 'play';
+        window.currentPhase = 'play';
+    }
+}
 
-2. play（出牌阶段）
-   - 进入条件：draw阶段结束后自动进入，或discard阶段结束后进入。
-   - 行为：玩家选择手牌出牌并攻击Boss。
-   - 若Boss生命为0，自动切换Boss并递增击败数，然后结束play阶段。
-   - 若Boss未被击败，玩家操作后进入discard阶段。
-
-3. discard（弃牌/承伤阶段）
-   - 进入条件：play阶段攻击后Boss未死时进入。
-   - 行为：
-     - 若手牌超上限，自动弃掉多余手牌。
-     - 若手牌为空或总攻击力不足以抵挡Boss攻击，判定游戏失败。
-     - 玩家选择弃牌抵挡Boss攻击，弃牌后若抵挡成功则进入play阶段。
-   - 若Boss生命为0，自动切换Boss并递增击败数，然后进入draw阶段。
-   - 若Boss攻击为0，直接进入play阶段。
-
-4. 游戏失败
-   - 只在discard阶段判定：手牌为空或手牌总攻击力不足以抵挡Boss攻击时，判定失败。
-
-5. 游戏胜利
-   - 在Boss全部被击败时判定，流程在boss.js中处理。
-
-阶段流转顺序：
-初始化/击败Boss -> draw -> play -> (若Boss未死) discard -> play -> draw -> ... 循环，直到胜利或失败。
-*/
-
+// 导出 initializeGame，供 game.js 调用
 export function initializeGame(cards) {
     initializeDeck(cards);
     if (typeof resetBossProgress === 'function') resetBossProgress();
