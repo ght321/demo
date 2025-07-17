@@ -40,6 +40,20 @@ window.addEventListener('DOMContentLoaded', () => {
             bindHandCardClick();
             bindPlayButton();
         });
+
+    // 确保全局可调试
+    window.gameState = {
+        get hand() { return window.hand; },
+        get deck() { return window.deck; },
+        get discardPile() { return window.discardPile; },
+        get currentPhase() {
+            return typeof window.currentPhase !== 'undefined'
+                ? window.currentPhase
+                : (typeof currentPhase !== 'undefined' ? currentPhase : '');
+        },
+        get currentBoss() { return window.currentBoss; },
+        get defeatedBossCount() { return window.defeatedBossCount; }
+    };
 });
 
 // 新增：暴露一个 applyArchiveState 方法用于恢复游戏状态
@@ -49,9 +63,9 @@ export function applyArchiveState(archive) {
     window.deck = archive.deck || [];
     window.discardPile = archive.discardPile || [];
     window.bossCards = archive.bossCards || [];
-    // 修正：同步 currentBoss 和 defeatedBossCount 到 boss.js 的全局变量
-    window.currentBoss = archive.currentBoss || null;
-    window.defeatedBossCount = archive.defeatedBossCount || 0;
+    // 修正：直接赋值 window.currentBoss，允许为对象（不要用 || null，否则会丢失boss对象）
+    window.currentBoss = typeof archive.currentBoss !== 'undefined' ? archive.currentBoss : null;
+    window.defeatedBossCount = typeof archive.defeatedBossCount !== 'undefined' ? archive.defeatedBossCount : 0;
 
     // 同步到 boss.js 的全局变量
     try {
@@ -87,8 +101,10 @@ export function getCurrentGameState() {
         deck: window.deck,
         discardPile: window.discardPile,
         bossCards: window.bossCards,
-        currentBoss: window.currentBoss,           // 确保包含当前boss
-        defeatedBossCount: window.defeatedBossCount // 确保包含已击败boss数量
+        currentBoss: window.currentBoss,
+        defeatedBossCount: window.defeatedBossCount,
+        // 新增：存档时保存当前阶段
+        currentPhase: typeof window.currentPhase !== 'undefined' ? window.currentPhase : (typeof currentPhase !== 'undefined' ? currentPhase : 'draw')
     };
     console.log('存档内容:', state);
     return state;
