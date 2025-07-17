@@ -96,25 +96,23 @@ export function applyArchiveState(archive) {
     // 刷新手牌区DOM和颜色
     sortHandCards();
 
+    // 关键：每次刷新手牌区后，必须重新绑定点击事件，保证手牌可点击
+    bindHandCardClick();
+
     // 刷新UI
     updateHandCount();
     updateDeckCount();
     updateDefeatedBossCount();
     updateDiscardPileDisplay();
     updateDeckDisplay();
-
-    // 刷新Boss和手牌的颜色
     updateBossCardColors();
 
-    // 重新绑定所有事件，确保UI可交互
-    bindHandCardClick();
+    // 重新绑定其它事件
     bindPlayButton();
     bindDiscardButton();
 
-    // 保证弃牌逻辑引用
     window.discardSelectedCards = (...args) => discardSelectedCards.apply(null, args);
 
-    // 同步阶段和boss相关变量
     applyArchivePhaseState(archive);
     applyArchiveBossState(archive);
 
@@ -192,4 +190,5 @@ export function getCurrentGameState() {
     console.log('存档内容:', state);
     return state;
 }
+
 
