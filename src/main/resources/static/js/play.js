@@ -31,6 +31,9 @@ export function playCard() {
         }
         return null;
     }).filter(card => card !== null);
+    // 同步到 window
+    window.hand = hand;
+    window.discardPile = discardPile;
     let totalAttack = playedCards.reduce((sum, card) => sum + card.attack, 0);
     // 草花技能：只要有草花，最后总伤害翻倍（只翻倍一次）
     if (playedCards.some(card => card.suit === '♣')) {

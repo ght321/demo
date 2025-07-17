@@ -21,9 +21,6 @@ public class User {
 
     private String password;
 
-    // 可扩展：保存游戏进度（如击败Boss数、手牌等）
-    private int defeatedBossCount;
-
     // getter/setter
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -33,8 +30,5 @@ public class User {
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
-
-    public int getDefeatedBossCount() { return defeatedBossCount; }
-    public void setDefeatedBossCount(int defeatedBossCount) { this.defeatedBossCount = defeatedBossCount; }
 }
 

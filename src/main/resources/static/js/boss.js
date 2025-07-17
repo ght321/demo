@@ -205,6 +205,13 @@ export function hideVictoryMessage() {
     }
 }
 
+// 新增：允许外部同步currentBoss和defeatedBossCount
+export function syncBossStateFromWindow() {
+    if (typeof window.currentBoss !== 'undefined') currentBoss = window.currentBoss;
+    if (typeof window.defeatedBossCount !== 'undefined') defeatedBossCount = window.defeatedBossCount;
+    updateDefeatedBossCount();
+}
+
 // 核心胜利条件判断函数
 export function checkVictoryCondition() {
     if (defeatedBossCount >= TOTAL_BOSS_COUNT) {

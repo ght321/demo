@@ -293,6 +293,7 @@
 </head>
 <body>
     <h1>欢迎来到卡牌对战小游戏！</h1>
+    <div id="user-id-display" style="margin-bottom: 10px; color: #888; font-size: 15px;"></div>
 
     <!-- 隐藏原来的boss区域 -->
     <div class="boss-area">
@@ -359,5 +360,125 @@
         </div>
     </div>
 
+    <div id="start-buttons" style="margin: 30px 0;">
+        <button id="new-game-btn">重新开始</button>
+        <button id="load-archive-btn">进入存档</button>
+        <button id="save-archive-btn">手动存档</button> <!-- 新增：手动存档按钮 -->
+    </div>
+
 </body>
 </html>
+<script type="module">
+    import { getCurrentGameState, applyArchiveState } from '/js/game.js';
+    import { syncBossStateFromWindow } from '/js/boss.js';
+    function getUserIdFromUrlOrStorage() {
+        // 优先从localStorage获取
+        let userId = localStorage.getItem('userId');
+        if (!userId) {
+            // 再尝试从URL参数获取
+            const params = new URLSearchParams(window.location.search);
+            userId = params.get('userId');
+            if (userId) {
+                localStorage.setItem('userId', userId);
+            }
+        }
+        if (userId) {
+            window.userId = userId;
+        }
+        // 调试：输出localStorage内容
+        // console.log('localStorage.userId:', localStorage.getItem('userId'));
+        return userId;
+    }
+
+    function getUsernameFromUrlOrStorage() {
+        const params = new URLSearchParams(window.location.search);
+        let username = params.get('username');
+        if (!username) {
+            username = localStorage.getItem('username');
+        }
+        if (username) {
+            window.username = username;
+            localStorage.setItem('username', username);
+        }
+        return username;
+    }
+
+    function showUserId() {
+        // 优先从window.userId和localStorage获取
+        const userId = window.userId || localStorage.getItem('userId');
+        const userIdDiv = document.getElementById('user-id-display');
+        if (userIdDiv) {
+            userIdDiv.textContent = userId ? `当前用户ID: ${userId}` : '未检测到用户ID';
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+        // 确保userId和username在页面加载时被正确设置
+        getUserIdFromUrlOrStorage();
+        showUserId();
+        const newGameBtn = document.getElementById('new-game-btn');
+        const loadArchiveBtn = document.getElementById('load-archive-btn');
+        const saveArchiveBtn = document.getElementById('save-archive-btn');
+
+        newGameBtn.onclick = function() {
+            // 新游戏逻辑
+            location.reload();
+        };
+
+        loadArchiveBtn.onclick = async function() {
+            let userId = window.userId || localStorage.getItem('userId');
+            if (!userId) {
+                alert('请先登录或注册');
+                return;
+            }
+            const response = await fetch('/api/archive/load?userId=' + userId);
+            if (!response.ok) {
+                const text = await response.text();
+                alert('加载存档失败: ' + text);
+                return;
+            }
+            const archiveText = await response.text();
+            let archive;
+            try {
+                archive = JSON.parse(archiveText);
+            } catch {
+                alert('存档数据格式错误');
+                return;
+            }
+            // 调用 applyArchiveState 恢复游戏状态，并强制刷新UI
+            applyArchiveState(archive);
+            // 新增：同步boss.js的currentBoss和defeatedBossCount
+            syncBossStateFromWindow();
+            if (typeof window.updateGameUI === 'function') {
+                window.updateGameUI();
+            }
+            // 检查恢复后关键变量
+            console.log('载入存档后状态:', archive, window.cards, window.hand, window.deck, window.bossCards, window.currentBoss, window.defeatedBossCount);
+            alert('存档加载成功');
+        };
+
+        if (saveArchiveBtn) {
+            saveArchiveBtn.onclick = async function() {
+                let userId = window.userId || localStorage.getItem('userId');
+                if (!userId) {
+                    alert('请先登录或注册');
+                    return;
+                }
+                // 存档时直接调用 getCurrentGameState，确保采集到最新的手牌和所有状态
+                const gameState = JSON.stringify(getCurrentGameState());
+                const resp = await fetch('/api/archive/save?userId=' + userId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: gameState
+                });
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    alert('存档失败: ' + text);
+                    return;
+                }
+                alert('存档成功');
+            };
+        }
+    });
+</script>
+

@@ -1,7 +1,6 @@
 package com.example.cardgame.web;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,14 +25,6 @@ public class UserController {
         return userService.login(username, password);
     }
 
-    @PostMapping("/saveProgress")
-    public String saveProgress(@RequestParam String username, @RequestParam int defeatedBossCount) {
-        return userService.saveProgress(username, defeatedBossCount);
-    }
-
-    @GetMapping("/progress")
-    public Integer getProgress(@RequestParam String username) {
-        return userService.getProgress(username);
-    }
+   
 }
 

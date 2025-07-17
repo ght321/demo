@@ -15,6 +15,8 @@ export function activateSkill(card) {
             updateDeckDisplay();
             updateDiscardPileDisplay();
             updateDeckCount();
+            window.deck = deck;
+            window.discardPile = discardPile;
             break;
         case '♦':
             const drawFromDeckCount = Math.min(deck.length, getCardValue(card));
@@ -24,6 +26,8 @@ export function activateSkill(card) {
                     hand.push(deck.shift());
                 }
             }
+            window.hand = hand;
+            window.deck = deck;
             break;
         case '♣':
             // 草花攻击效果已在主流程处理，这里无需任何操作

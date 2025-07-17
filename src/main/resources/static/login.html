@@ -125,6 +125,41 @@
                 window.location.href = '/index.html?username=' + encodeURIComponent(loginUser.username);
             }
         };
+        // 假设你有登录表单，登录成功后拿到 userId 和 username
+        function onLoginSuccess(userId, username) {
+            // 存储到 localStorage
+            localStorage.setItem('userId', userId);
+            localStorage.setItem('username', username);
+            // 跳转到游戏界面并带上参数
+            window.location.href = '/index.html?userId=' + encodeURIComponent(userId) + '&username=' + encodeURIComponent(username);
+        }
+
+        // 示例：表单提交事件
+        document.getElementById('loginForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const form = e.target;
+            const params = new URLSearchParams();
+            params.append('username', form.username.value);
+            params.append('password', form.password.value);
+            const resp = await fetch('/api/user/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: params
+            });
+            if (resp.ok) {
+                const user = await resp.json();
+                if (user && user.id) {
+                    // 登录成功
+                    onLoginSuccess(user.id, user.username);
+                } else {
+                    document.getElementById('loginMsg').style.color = '#e74c3c';
+                    document.getElementById('loginMsg').innerText = '用户名或密码错误';
+                }
+            } else {
+                document.getElementById('loginMsg').style.color = '#e74c3c';
+                document.getElementById('loginMsg').innerText = '请求失败';
+            }
+        };
     </script>
 </body>
 </html>

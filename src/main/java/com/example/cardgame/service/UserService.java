@@ -18,7 +18,6 @@ public class UserService {
         User user = new User();
         user.setUsername(username);
         user.setPassword(password);
-        user.setDefeatedBossCount(0);
         userRepository.save(user);
         return "注册成功";
     }
@@ -31,18 +30,15 @@ public class UserService {
         return null;
     }
 
-    public String saveProgress(String username, int defeatedBossCount) {
+    public String saveProgress(String username) {
         User user = userRepository.findByUsername(username);
         if (user != null) {
-            user.setDefeatedBossCount(defeatedBossCount);
             userRepository.save(user);
             return "进度已保存";
         }
         return "用户不存在";
     }
 
-    public Integer getProgress(String username) {
-        User user = userRepository.findByUsername(username);
-        return user != null ? user.getDefeatedBossCount() : null;
-    }
 }
+    
+

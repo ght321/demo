@@ -49,6 +49,8 @@ export function advanceToNextPhase(nextPhase) {
         updateHandCount();
         updateDeckDisplay();
         updateDeckCount();
+        window.hand = hand;
+        window.deck = deck;
         setTimeout(() => advanceToNextPhase('play'), 0);
         return;
     }
@@ -69,6 +71,8 @@ export function advanceToNextPhase(nextPhase) {
             }
             return;
         }
+        window.hand = hand;
+        window.deck = deck;
         return;
     }
     if (nextPhase === 'discard') {
@@ -151,6 +155,8 @@ export function advanceToNextPhase(nextPhase) {
                 discardBtnBound = true;
             }
         }
+        window.hand = hand;
+        window.discardPile = discardPile;
         return;
     }
 }
@@ -205,5 +211,8 @@ export function initializeGame(cards) {
     updateHandCount();
     updateDeckDisplay();
     updateDeckCount();
+    window.hand = hand;
+    window.deck = deck;
+    window.discardPile = discardPile;
     setTimeout(() => advanceToNextPhase('play'), 0);
 }

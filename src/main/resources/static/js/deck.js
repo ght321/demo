@@ -11,6 +11,8 @@ export function shuffleDeck(cards) {
         const j = Math.floor(Math.random() * (i + 1));
         [cards[i], cards[j]] = [cards[j], cards[i]];
     }
+    // 保证洗牌后同步到 window
+    window.deck = cards;
 }
 
 export function initializeDeck(cards) {
@@ -24,12 +26,17 @@ export function initializeDeck(cards) {
         ];
     }
     shuffleDeck(deck);
+    // 同步到 window
+    window.deck = deck;
 }
 
 export function drawCard() {
     if (deck.length === 0) return null;
     const drawnCard = deck.shift();
     hand.push(drawnCard);
+    // 同步到 window
+    window.deck = deck;
+    window.hand = hand;
     return drawnCard;
 }
 
@@ -45,4 +52,6 @@ export function updateDiscardPileDisplay() {
     if (discardText) {
         discardText.textContent = `弃牌堆 (${discardPile.length})`;
     }
+    // 同步到 window
+    window.discardPile = discardPile;
 }

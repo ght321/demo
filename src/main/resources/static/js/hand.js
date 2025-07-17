@@ -31,6 +31,8 @@ export function sortHandCards() {
             handContainer.appendChild(cardElement);
         }
     }
+    // 同步到 window
+    window.hand = hand;
 }
 
 function getCardRank(cardName) {
@@ -52,4 +54,5 @@ export function clearSelectedCards() {
         const allCards = handContainer.querySelectorAll('.hand-card');
         allCards.forEach(card => card.classList.remove('selected'));
     }
+    // 无需同步 window.hand，这里只是清除选中
 }
