@@ -7,7 +7,10 @@ import { selectedCards } from './hand.js';
 export function bindHandCardClick() {
     const handContainer = document.getElementById('hand-cards');
     if (handContainer) {
-        handContainer.addEventListener('click', (event) => {
+        // 先移除之前的事件监听，防止重复绑定
+        const newHandContainer = handContainer.cloneNode(true);
+        handContainer.parentNode.replaceChild(newHandContainer, handContainer);
+        newHandContainer.addEventListener('click', (event) => {
             const cardElement = event.target.closest('.hand-card');
             if (!cardElement) return;
             if (selectedCards.includes(cardElement)) {

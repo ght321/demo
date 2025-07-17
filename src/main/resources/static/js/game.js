@@ -118,6 +118,19 @@ export function applyArchiveState(archive) {
     applyArchivePhaseState(archive);
     applyArchiveBossState(archive);
 
+    // 关键：恢复后根据当前阶段重新激活主流程（如按钮可用性、阶段逻辑等）
+    if (window.currentPhase === 'play') {
+        // 重新激活出牌阶段的主流程（如按钮、事件、UI等）
+        if (typeof window.playCard === 'function') {
+            // 可选：可在此处做出牌按钮可用等处理
+        }
+    } else if (window.currentPhase === 'discard') {
+        // 重新激活弃牌阶段的主流程
+        if (typeof window.discardSelectedCards === 'function') {
+            // 可选：可在此处做弃牌按钮可用等处理
+        }
+    }
+
     // 强制刷新页面所有UI（如果有全局刷新函数）
     if (typeof window.updateGameUI === 'function') window.updateGameUI();
 
@@ -130,6 +143,12 @@ export function applyArchiveState(archive) {
         get currentBoss() { return window.currentBoss; },
         get defeatedBossCount() { return window.defeatedBossCount; }
     };
+
+    // 新增：确保按钮不被禁用
+    const playBtn = document.getElementById('play-btn');
+    if (playBtn) playBtn.disabled = false;
+    const discardBtn = document.getElementById('discard-btn');
+    if (discardBtn) discardBtn.disabled = false;
 
     console.log('恢复存档后状态:', {
         hand: window.hand,
@@ -144,15 +163,30 @@ export function applyArchiveState(archive) {
 
 // 提供统一导出当前游戏状态的方法
 export function getCurrentGameState() {
+    // 修正：存档时同步当前boss的最新血量和攻击力
+    let boss = window.currentBoss ? { ...window.currentBoss } : null;
+    if (boss) {
+        // 从UI读取最新血量和攻击力
+        const bossHealthEl = document.getElementById('boss-health');
+        const bossAttackEl = document.getElementById('boss-attack');
+        if (bossHealthEl) {
+            const health = parseInt(bossHealthEl.textContent);
+            boss.health = health;
+            boss.defense = health;
+        }
+        if (bossAttackEl) {
+            const attack = parseInt(bossAttackEl.textContent);
+            boss.attack = attack;
+        }
+    }
     const state = {
         cards: window.cards,
         hand: window.hand,
         deck: window.deck,
         discardPile: window.discardPile,
         bossCards: window.bossCards,
-        currentBoss: window.currentBoss,
+        currentBoss: boss,
         defeatedBossCount: window.defeatedBossCount,
-        // 新增：存档时保存当前阶段
         currentPhase: typeof window.currentPhase !== 'undefined' ? window.currentPhase : (typeof currentPhase !== 'undefined' ? currentPhase : 'play')
     };
     console.log('存档内容:', state);
