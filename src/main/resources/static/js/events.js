@@ -3,6 +3,7 @@
 // 通过事件驱动调用playCard等主流程函数。
 import { playCard } from './play.js';
 import { selectedCards } from './hand.js';
+import { advanceToNextPhase } from './phases.js';
 
 export function bindHandCardClick() {
     const handContainer = document.getElementById('hand-cards');
@@ -35,5 +36,17 @@ export function bindPlayButton() {
 
 // 新增：导出 bindDiscardButton，确保其它模块可用
 export function bindDiscardButton() {
-    // ...existing code...
+    // 这段代码的作用：
+    // 1. 获取页面上的“弃牌”按钮（id为 discard-btn）。
+    // 2. 如果按钮存在，则给它绑定一个点击事件监听器。
+    // 3. 当按钮被点击时，如果 window.discardSelectedCards 是一个函数，就调用它（执行弃牌逻辑）。
+    const discardBtn = document.getElementById('discard-btn');
+    if (discardBtn) {
+        discardBtn.addEventListener('click', () => {
+            if (typeof window.discardSelectedCards === 'function'&&window.currentPhase === 'discard') {
+                window.discardSelectedCards();
+                advanceToNextPhase('discard');
+            }
+        });
+    }
 }
