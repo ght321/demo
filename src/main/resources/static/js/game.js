@@ -71,6 +71,28 @@ window.addEventListener('DOMContentLoaded', () => {
         get currentBoss() { return window.currentBoss; },
         get defeatedBossCount() { return window.defeatedBossCount; }
     };
+
+    // 便于F12命令行查看和调试当前阶段
+    Object.defineProperty(window, 'currentPhase', {
+        get() {
+            // 优先取 phases.js 的 currentPhase，如果有则返回
+            try {
+                // 动态导入只读变量
+                return typeof phasesCurrentPhase !== 'undefined' ? phasesCurrentPhase : '';
+            } catch {
+                return '';
+            }
+        },
+        set(val) {
+            // 同步到 phases.js 的 currentPhase 和 window
+            try {
+                if (typeof phasesCurrentPhase !== 'undefined') {
+                    // eslint-disable-next-line no-global-assign
+                    phasesCurrentPhase = val;
+                }
+            } catch {}
+        }
+    });
 });
 
 
