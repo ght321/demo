@@ -104,7 +104,7 @@ export function getCurrentGameState() {
         currentBoss: window.currentBoss,
         defeatedBossCount: window.defeatedBossCount,
         // 新增：存档时保存当前阶段
-        currentPhase: typeof window.currentPhase !== 'undefined' ? window.currentPhase : (typeof currentPhase !== 'undefined' ? currentPhase : 'draw')
+        currentPhase: typeof window.currentPhase !== 'undefined' ? window.currentPhase : (typeof currentPhase !== 'undefined' ? currentPhase : 'play')
     };
     console.log('存档内容:', state);
     return state;
