@@ -31,14 +31,22 @@ export function playCard() {
         }
         return null;
     }).filter(card => card !== null);
-    // 同步到 window
     window.hand = hand;
     window.discardPile = discardPile;
-    let totalAttack = playedCards.reduce((sum, card) => sum + card.attack, 0);
-    // 草花技能：只要有草花，最后总伤害翻倍（只翻倍一次）
-    if (playedCards.some(card => card.suit === '♣')) {
+
+    // 计算总攻击力
+    let totalAttack = 0;
+    let hasClub = false;
+    playedCards.forEach(card => {
+        totalAttack += card.attack || 0;
+        if (card.suit === '♣') hasClub = true;
+    });
+
+    // 只有草花♣造成双倍伤害，黑桃♠不加倍
+    if (hasClub) {
         totalAttack *= 2;
     }
+
     // 技能生效判定：如果卡牌花色与当前Boss花色相同，则技能无效
     const bossCard = document.querySelector('.current-boss-card');
     let bossSuit = '';
@@ -47,12 +55,9 @@ export function playCard() {
     }
     playedCards.forEach(card => {
         if (card.suit !== bossSuit) {
-            if(card.suit=='♠')
-            totalAttack*=2;
-            else
+            // 只激活技能，不再对黑桃做任何伤害加倍处理
             activateSkill(card);
         }
-        // 否则技能无效，不调用activateSkill
     });
 
     // Boss 生命值处理
@@ -62,25 +67,27 @@ export function playCard() {
         bossHealth = parseInt(bossHealthSpan.textContent);
         bossHealth = Math.max(0, bossHealth - totalAttack);
         bossHealthSpan.textContent = bossHealth;
+        // 同步到 window.currentBoss
+        if (window.currentBoss) {
+            window.currentBoss.health = bossHealth;
+            window.currentBoss.defense = bossHealth;
+        }
     }
 
     logGameEvent(`玩家使用了 ${playedCards.map(c => c.name).join(', ')}，造成 ${totalAttack} 点伤害！`);
     clearSelectedCards();
     sortHandCards();
 
-    // 造成伤害后，若Boss未死则进入承伤（弃牌）阶段
     if (bossHealth > 0) {
-        // 进入弃牌阶段
         window.setTimeout(() => {
             logGameEvent('Boss未被击败，进入弃牌阶段（承伤）！');
             if (typeof advanceToNextPhase === 'function') advanceToNextPhase('discard');
         }, 300);
     } else {
         logGameEvent('Boss被击败，继续游戏！');
-        // Boss被击败，直接进入抽牌阶段
         window.setTimeout(() => {
-            // 不再处理弃牌逻辑，直接进入抽牌阶段
             if (typeof advanceToNextPhase === 'function') advanceToNextPhase('draw');
         }, 300);
     }
 }
+      

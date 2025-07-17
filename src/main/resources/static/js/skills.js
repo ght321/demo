@@ -30,16 +30,21 @@ export function activateSkill(card) {
             window.deck = deck;
             break;
         case '♣':
-            // 草花攻击效果已在主流程处理，这里无需任何操作
+            // 草花：造成双倍伤害（主流程已处理，这里无需操作）
             break;
         case '♠':
+            // 黑桃：降低Boss攻击力，不造成双倍伤害，只正常结算伤害
             const bossAttackElement = document.getElementById('boss-attack');
             if (bossAttackElement) {
                 let currentAttack = parseInt(bossAttackElement.textContent);
-                const defenseValue = getCardValue(card);
-                currentAttack = Math.max(0, currentAttack - defenseValue);
+                const reduceValue = getCardValue(card);
+                currentAttack = Math.max(0, currentAttack - reduceValue);
                 bossAttackElement.textContent = currentAttack;
+                if (window.currentBoss) {
+                    window.currentBoss.attack = currentAttack;
+                }
             }
+            // 不做双倍伤害处理，主流程只按普通伤害结算
             break;
     }
 }
